@@ -1,7 +1,9 @@
 import type { Dispatch as ReduxDispatch, Store as ReduxStore } from 'redux';
+import { ServiceType } from '../types/service';
 
 export type counterStateType = {
-  +counter: number
+  +counter: number,
+  services: Array<ServiceType>
 };
 
 export type Action = {

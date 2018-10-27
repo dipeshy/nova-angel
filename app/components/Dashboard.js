@@ -1,9 +1,11 @@
 // @flow
 import React, { Component } from 'react';
 import styles from './Dashboard.css';
+import { ServiceType } from '../types/service';
+import ServiceComponent from './Services/ServiceComponent';
 
 type Props = {
-  services: Array<any>
+  services: Array<ServiceType>
 };
 
 export default class Dashboard extends Component<Props> {
@@ -11,11 +13,13 @@ export default class Dashboard extends Component<Props> {
 
   render() {
     const { services } = this.props;
-    console.log(services);
     return (
-      <div className={`pane-group ${styles.container}`} data-tid="container">
-        <div className="pane-sm sidebar">...</div>
-        <div className="pane">Dashboard</div>
+      <div className="pane-group" data-tid="container">
+        <div className={`pane ${styles['services-container']}`}>
+          {services.map((service: ServiceType) => (
+            <ServiceComponent key={service.id} service={service} />
+          ))}
+        </div>
       </div>
     );
   }

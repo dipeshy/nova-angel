@@ -1,2 +1,5 @@
-.container {
+.services-container {
+  display: flex;
+  padding-left: 10px;
+  padding-top: 15px;
 }

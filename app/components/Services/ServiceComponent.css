@@ -1,0 +1,22 @@
+.container {
+  width: 240px;
+  height: 150px;
+  background: #eee;
+  border-radius: 5px;
+  padding: 4px 10px;
+  margin-right: 15px;
+  box-shadow: 2px 2px 3px rgba(50, 50, 50, 0.5);
+  box-sizing: content-box;
+}
+
+.container header {
+  text-align: left;
+  min-height: 32px;
+  border-bottom: 1px solid #bbb;
+}
+.container header h1 {
+  width: 160px;
+  margin: 0;
+  font-size: 1.2em;
+  float: left;
+}

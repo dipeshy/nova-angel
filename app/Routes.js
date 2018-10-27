@@ -7,13 +7,18 @@ import DashboardPage from './containers/DashboardPage';
 import HomePage from './containers/HomePage';
 import CounterPage from './containers/CounterPage';
 import ServiceAddPage from './containers/ServiceAddPage';
+import ServiceDetailsPage from './containers/ServiceDetailsPage';
 
 export default () => (
   <App>
     <Switch>
       <Route path={routes.COUNTER} component={CounterPage} />
-      <Route path={routes.SERVICES_ADD} component={ServiceAddPage} />
-      <Route path={routes.HOME} component={DashboardPage} />
+      <Route exact path={routes.SERVICES_ADD} component={ServiceAddPage} />
+      <Route
+        path={`${routes.SERVICES}/:serviceId`}
+        component={ServiceDetailsPage}
+      />
+      <Route exact path={routes.HOME} component={DashboardPage} />
       <Route path={routes.HOME} component={HomePage} />
     </Switch>
   </App>
