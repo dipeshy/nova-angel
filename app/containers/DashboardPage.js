@@ -1,13 +1,14 @@
 // @flow
-import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import Dashboard from '../components/Dashboard';
 
-type Props = {};
-
-export default class DashboardPage extends Component<Props> {
-  props: Props;
-
-  render() {
-    return <Dashboard />;
-  }
+function mapStateToProps(state) {
+  return {
+    services: state.services
+  };
 }
+
+export default connect(
+  mapStateToProps,
+  null
+)(Dashboard);
