@@ -6,14 +6,14 @@ import App from './containers/App';
 import DashboardPage from './containers/DashboardPage';
 import HomePage from './containers/HomePage';
 import CounterPage from './containers/CounterPage';
-import ServiceAddPage from './containers/ServiceAddPage';
+import ServiceCreatePage from './containers/ServiceCreatePage';
 import ServiceDetailsPage from './containers/ServiceDetailsPage';
 
 export default () => (
   <App>
     <Switch>
       <Route path={routes.COUNTER} component={CounterPage} />
-      <Route exact path={routes.SERVICES_ADD} component={ServiceAddPage} />
+      <Route exact path={routes.SERVICES_ADD} component={ServiceCreatePage} />
       <Route
         path={`${routes.SERVICES}/:serviceId`}
         component={ServiceDetailsPage}

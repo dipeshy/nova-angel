@@ -11,5 +11,6 @@ export type NpmTaskType = {
 
 export type EditorTaskType = {
   id: string,
+  projectDir: string,
   type: 'editor'
 };

@@ -22,10 +22,13 @@ export default class ServiceCreate extends Component<Props> {
     super(props);
     this.dialog = dialog;
     this.state = {
-      projectDir: '',
-      name: '',
-      npmtasks: [],
-      tasks: []
+      service: {
+        id: v4(),
+        name: '',
+        projectDir: '',
+        tasks: []
+      },
+      npmtasks: []
     };
   }
 
@@ -38,20 +41,15 @@ export default class ServiceCreate extends Component<Props> {
   handleSubmit = event => {
     event.preventDefault();
     const { createService, history } = this.props;
-    const { name, projectDir, tasks } = this.state;
+    const { service } = this.state;
 
-    const service = {
-      id: v4(),
-      name,
-      projectDir,
-      tasks
-    };
     console.log('Creating service', service);
     createService(service);
     history.push('/');
   };
 
   setProjectDirWithDialog = () => {
+    const { service } = this.state;
     const selectedDirs = this.dialog.showOpenDialog({
       properties: ['openDirectory']
     });
@@ -63,13 +61,19 @@ export default class ServiceCreate extends Component<Props> {
     }
 
     const { name, npmscripts } = manifest;
+    service.name = name;
+    service.projectDir = projectDir;
+    const editorTask = {
+      id: `${service.id}:editor`,
+      projectDir: service.projectDir,
+      type: 'editor'
+    };
+    service.tasks = [editorTask, ...service.tasks];
 
-    this.setState({
-      projectDir,
-      name,
-      npmtasks: createNpmTasks(npmscripts),
-      tasks: []
-    });
+    this.setState(() => ({
+      service,
+      npmtasks: createNpmTasks(service.id, npmscripts)
+    }));
   };
 
   selectNpmScript = event => {
@@ -85,22 +89,29 @@ export default class ServiceCreate extends Component<Props> {
   };
 
   addTask = task => {
-    const { tasks } = this.state;
-    tasks.push(task);
-    this.setState({
-      tasks
+    console.log('Adding task', { task });
+    this.setState(prevState => {
+      const state = { ...prevState };
+      state.service.tasks.push(task);
+      return state;
     });
   };
 
   removeTask = id => {
-    const { tasks } = this.state;
-    this.setState({
-      tasks: tasks.filter(task => id !== task.id)
+    console.log('Removing task', { id });
+
+    this.setState(prevState => {
+      const state = { ...prevState };
+      const tasks = prevState.service.tasks.filter(task => id !== task.id);
+      state.service.tasks = tasks;
+      return state;
     });
   };
 
   render() {
-    const { projectDir, name, tasks, npmtasks } = this.state;
+    const { service, npmtasks } = this.state;
+    const { name, tasks, projectDir } = service;
+    console.log('HERE', tasks);
     return (
       <div className={`${styles.container}`} data-tid="container">
         <form onSubmit={this.handleSubmit}>

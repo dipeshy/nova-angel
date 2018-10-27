@@ -27,7 +27,7 @@ export default class ServiceDetails extends Component<Props> {
 
     this.state = {
       service,
-      npmtasks: createNpmTasks(npmscripts)
+      npmtasks: createNpmTasks(service.id, npmscripts)
     };
   }
 
