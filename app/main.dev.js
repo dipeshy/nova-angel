@@ -10,8 +10,9 @@
  *
  * @flow
  */
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import MenuBuilder from './menu';
+import taskRunner from './utils/task-runner';
 
 let mainWindow = null;
 
@@ -88,4 +89,8 @@ app.on('ready', async () => {
 
   const menuBuilder = new MenuBuilder(mainWindow);
   menuBuilder.buildMenu();
+});
+
+ipcMain.on('Task', (event, taskName, params) => {
+  taskRunner(taskName, params);
 });

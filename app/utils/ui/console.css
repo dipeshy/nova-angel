@@ -1,0 +1,43 @@
+#console-output {
+  font-family: monaco, sans-serif;
+  color: #eee;
+  text-align: left;
+  font-size: 0.8em;
+}
+#console-output pre {
+  font-family: monaco, sans-serif;
+  font-size: 0.85em;
+  margin: 0;
+  padding: 0;
+}
+
+.ansi-white {
+  color: #eee;
+}
+.ansi-red {
+  color: #b00020;
+}
+.ansi-green {
+  color: #00c000;
+}
+.ansi-yellow {
+  color: yellow;
+}
+.ansi-blue {
+  color: rgb(50, 50, 238);
+}
+.ansi-cyan {
+  color: #00d0d0;
+}
+.ansi-bold {
+  font-weight: bold;
+}
+
+.ansi-reset {
+  color: #eee;
+  background-color: rgb(30, 30, 30);
+}
+
+a {
+  color: #00c000;
+}

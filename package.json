@@ -242,6 +242,7 @@
     "electron-store": "^2.0.0",
     "history": "^4.7.2",
     "photonkit": "^0.1.2",
+    "rambda": "^1.2.6",
     "react": "^16.4.1",
     "react-dom": "^16.4.1",
     "react-hot-loader": "^4.3.4",
