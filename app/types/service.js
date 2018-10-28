@@ -3,6 +3,6 @@ import { TaskType } from './task';
 export type ServiceType = {
   id: string,
   name: string,
-  projectDir: string,
+  projectDir?: string,
   tasks: Array<TaskType>
 };

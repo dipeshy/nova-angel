@@ -93,7 +93,9 @@ export default class ServiceCreate extends Component<Props> {
       <div className={`${styles.container}`}>
         <form onSubmit={this.handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Service Name</label>
+            <label htmlFor="name">
+              <strong>Service name</strong>
+            </label>
             <input
               type="text"
               id="name"
@@ -103,12 +105,15 @@ export default class ServiceCreate extends Component<Props> {
               placeholder="Service name"
             />
           </div>
+          <br />
+          <strong>Setup NodeJS Project</strong>
           <NodeServiceCreate
             service={service}
             setProjectDir={this.setProjectDir}
             addTask={this.addTask}
             removeTask={this.removeTask}
           />
+          <br />
           <div className="form-actions">
             <button type="submit" className="btn btn-form btn-primary">
               Create

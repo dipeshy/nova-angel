@@ -70,32 +70,34 @@ export default class NodeServiceCreate extends Component<Props> {
             type="button"
             onClick={this.setProjectDirWithDialog}
           >
-            Select Nodejs Project
+            Project Path
           </button>
           &nbsp;&nbsp;
           <span>{service.projectDir || 'Not set'}</span>
         </div>
-        <div className="checkbox">
-          <span>Select npm script</span>
-          {npmtasks.map((npmTask: TaskType) => {
-            const selected = !!service.tasks.find(t => t.id === npmTask.id);
-            return (
-              <div key={npmTask.id}>
-                <label htmlFor={npmTask.id}>
-                  <input
-                    id={npmTask.id}
-                    value={npmTask.id}
-                    defaultChecked={selected}
-                    onChange={this.selectNpmScript}
-                    type="checkbox"
-                  />
-                  &nbsp;
-                  {npmTask.name}
-                </label>
-              </div>
-            );
-          })}
-        </div>
+        {!!npmtasks.length && (
+          <div className="checkbox">
+            <strong>Select npm script</strong>
+            {npmtasks.map((npmTask: TaskType) => {
+              const selected = !!service.tasks.find(t => t.id === npmTask.id);
+              return (
+                <div key={npmTask.id}>
+                  <label htmlFor={npmTask.id}>
+                    <input
+                      id={npmTask.id}
+                      value={npmTask.id}
+                      defaultChecked={selected}
+                      onChange={this.selectNpmScript}
+                      type="checkbox"
+                    />
+                    &nbsp;
+                    {npmTask.name}
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }
