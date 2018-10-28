@@ -1,16 +1,153 @@
-const runCommand = require('./commands');
+import { resolve } from 'path';
+import { createWriteStream, readFileSync } from 'fs';
+import runCommand from './commands';
+import {
+  EDITOR_OPEN,
+  NPMSCRIPT_START,
+  NPMSCRIPT_STOP,
+  NPMSCRIPT_VIEWLOG
+} from '../constants/tasks-constants';
+import { TaskType, NpmTaskType, EditorTaskType } from '../types/task';
+import { ServiceType } from '../types/service';
+import { cleanAndCreateDir, createWindowWithHtml } from './utils';
 
-export default function taskRunner(taskName, params) {
-  console.log(`Received Task: ${taskName}`, params);
-  switch (taskName) {
-    case 'editor:open':
-      openEditor(params);
-      break;
-    default:
-      console.log('Unknown task', { taskName, params });
+const runningTasks = {};
+let LOGS_PATH: string;
+
+export default function createTaskRunner(cwd) {
+  LOGS_PATH = resolve(cwd, 'logs');
+  cleanAndCreateDir(LOGS_PATH);
+
+  return function taskRunner(
+    serviceContext: ServiceType,
+    taskName,
+    task: TaskType
+  ) {
+    console.log(`Received Task`, { serviceContext, taskName, task });
+    switch (taskName) {
+      case EDITOR_OPEN:
+        openEditor(serviceContext, task);
+        break;
+      case NPMSCRIPT_START:
+        npmscriptStart(serviceContext, task);
+        createOpenConsole(task);
+        break;
+      case NPMSCRIPT_STOP:
+        npmscriptStop(serviceContext, task);
+        break;
+      case NPMSCRIPT_VIEWLOG:
+        createOpenConsole(task);
+        break;
+      default:
+        console.log('Unknown task', { taskName, task });
+    }
+  };
+}
+
+function openEditor(_: ServiceType, task: EditorTaskType) {
+  return runCommand('code', [task.projectDir]);
+}
+
+// Mutates taskData
+function npmscriptStart(serviceContext: ServiceType, task: NpmTaskType) {
+  const taskData = (runningTasks[task.id] = runningTasks[task.id] || {});
+
+  if (!taskData.process) {
+    taskData.process = runCommand('yarn', task.cmd.split(' '), {
+      cwd: serviceContext.projectDir
+    });
+    // Mutates taskData
+    attachConsoleLogView(taskData.process, task.id);
+
+    taskData.process.on('exit', () => {
+      console.log('Task terminating', {
+        pid: taskData.process.pid,
+        task
+      });
+      handleTaskExit(task);
+      taskData.process = null;
+    });
   }
 }
 
-function openEditor(params) {
-  runCommand('code', [params.projectDir]);
+function npmscriptStop(serviceContext, task: TaskType) {
+  runningTasks[task.id].process.kill('SIGTERM');
+}
+
+function handleTaskExit(task) {
+  const taskData = (runningTasks[task.id] = runningTasks[task.id] || {});
+  if (taskData.logstream) {
+    taskData.logstream.end();
+    taskData.logstream = null;
+  }
+
+  if (taskData.consoleWindow) {
+    taskData.consoleWindow.focus();
+    taskData.consoleWindow.webContents.send(
+      'console:log',
+      'You can close the window. Auto closing in 5 sec'
+    );
+    setTimeout(() => {
+      if (taskData.consoleWindow) {
+        taskData.consoleWindow.close();
+      }
+    }, 5000);
+  }
+}
+
+function createOpenConsole(task: NpmTaskType) {
+  const taskData = (runningTasks[task.id] = runningTasks[task.id] || {});
+
+  if (taskData.consoleWindow) {
+    taskData.consoleWindow.focus();
+    return;
+  }
+  // ==============================
+  // Create consoleWindow if closed
+  // ==============================
+  const consoleWindow = createWindowWithHtml(
+    `Console: ${task.name}`,
+    resolve(__dirname, 'ui', 'console.html')
+  );
+  consoleWindow.once('ready-to-show', () => {
+    consoleWindow.show();
+    // load previous logs
+    const previousLogs = readFileSync(taskData.logFile, { encoding: 'utf8' });
+    consoleWindow.webContents.send('console:log', previousLogs);
+
+    // Set consoleWindow instance in main task list
+    taskData.consoleWindow = consoleWindow;
+  });
+  // Emitted when the window is closed.
+  consoleWindow.on('closed', () => {
+    taskData.consoleWindow = null;
+  });
+}
+
+function attachConsoleLogView(process, taskId: string) {
+  const taskData = (runningTasks[taskId] = runningTasks[taskId] || {});
+
+  taskData.logFile = resolve(LOGS_PATH, taskId);
+  taskData.logstream = createWriteStream(taskData.logFile);
+  taskData.logstream.on('close', () => {
+    console.log(`Closing log stream: ${taskData.logFile}`);
+  });
+
+  const outputWriter = createOutputWriter(taskId);
+  process.stdout.on('data', outputWriter);
+  process.stderr.on('data', outputWriter);
+}
+
+function createOutputWriter(taskId) {
+  return data => {
+    const taskData = (runningTasks[taskId] = runningTasks[taskId] || {});
+    if (taskData.logstream) {
+      taskData.logstream.write(data);
+    }
+
+    if (taskData.consoleWindow) {
+      const response = data.toString().trim();
+      taskData.consoleWindow.webContents.send('console:log', response);
+    }
+  };
 }

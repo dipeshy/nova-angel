@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import styles from './Task.css';
 import { EditorTaskType, TaskType } from '../../../types/task';
-import vscodeImg from '../../../assets/vscode-icon.png';
+import vscodeLogo from '../../../assets/vscode-icon.png';
 
 type Props = {
   task: EditorTaskType,
@@ -26,7 +26,7 @@ export default class EditorTask extends Component<Props> {
             width: '15px',
             height: '15px'
           }}
-          src={vscodeImg}
+          src={vscodeLogo}
           alt="vscode"
         />
         <span
@@ -36,11 +36,9 @@ export default class EditorTask extends Component<Props> {
             color: 'green',
             cursor: 'pointer'
           }}
-          role="button"
+          role="presentation"
           onClick={this.handleClick}
-          onKeyPress={this.handleClick}
           className="icon icon-export"
-          tabIndex={0}
         />
       </section>
     );

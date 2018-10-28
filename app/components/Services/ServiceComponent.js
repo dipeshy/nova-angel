@@ -20,8 +20,9 @@ export default class ServiceComponent extends Component<Props> {
   groupByTasks = groupBy(task => task.type);
 
   invokeTask = (taskName: string, task: TaskType) => {
-    console.log(`Running task`, task);
-    ipcRenderer.send('Task', taskName, task);
+    const { service } = this.props;
+    console.log(`Running task`, { taskName, task, service });
+    ipcRenderer.send('Task', service, taskName, task);
   };
 
   render() {
@@ -57,7 +58,11 @@ export default class ServiceComponent extends Component<Props> {
             />
           ))}
           {npmscript.map(task => (
-            <NpmScriptTask key={task.id} task={task} />
+            <NpmScriptTask
+              key={task.id}
+              task={task}
+              invokeTask={this.invokeTask}
+            />
           ))}
         </div>
       </section>

@@ -12,7 +12,13 @@
  */
 import { app, BrowserWindow, ipcMain } from 'electron';
 import MenuBuilder from './menu';
-import taskRunner from './utils/task-runner';
+import createTaskRunner from './utils/task-runner';
+
+// If a relative path, it's relative to the default cwd. ~/Library/Application Support/App Name/unicorn.
+process.env.CWD = process.env.CWD || app.getPath('userData');
+console.log('Current working directory', process.env.CWD);
+
+const taskRunner = createTaskRunner(process.env.CWD);
 
 let mainWindow = null;
 
@@ -91,6 +97,6 @@ app.on('ready', async () => {
   menuBuilder.buildMenu();
 });
 
-ipcMain.on('Task', (event, taskName, params) => {
-  taskRunner(taskName, params);
+ipcMain.on('Task', (event, serviceContext, taskName, params) => {
+  taskRunner(serviceContext, taskName, params);
 });

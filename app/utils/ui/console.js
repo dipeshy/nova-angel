@@ -1,6 +1,7 @@
 const { ipcRenderer, shell } = require('electron');
 
 ipcRenderer.on('console:log', (event, message) => {
+  console.info('event', { message });
   printConsole(message);
 });
 
