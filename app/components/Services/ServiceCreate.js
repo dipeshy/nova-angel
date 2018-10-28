@@ -2,9 +2,9 @@
 import { v4 } from 'uuid';
 import React, { Component } from 'react';
 import styles from './ServiceCreate.css';
-import npmPackageParser from '../../utils/npm-package-parser';
 import { ServiceType } from '../../types/service';
-import createNpmTasks from '../../utils/npmtasks';
+import { EditorTaskType } from '../../types/task';
+import NodeServiceCreate from './NodeServiceCreate';
 
 const { dialog } = require('electron').remote;
 
@@ -27,12 +27,11 @@ export default class ServiceCreate extends Component<Props> {
         name: '',
         projectDir: '',
         tasks: []
-      },
-      npmtasks: []
+      }
     };
   }
 
-  handleChange = event => {
+  handleNameChange = event => {
     this.setState({
       name: event.target.value
     });
@@ -48,44 +47,24 @@ export default class ServiceCreate extends Component<Props> {
     history.push('/');
   };
 
-  setProjectDirWithDialog = () => {
-    const { service } = this.state;
-    const selectedDirs = this.dialog.showOpenDialog({
-      properties: ['openDirectory']
+  setProjectDir = (projectDir: string) => {
+    this.setState(prevState => {
+      const { service } = prevState;
+      service.projectDir = projectDir;
+
+      const editorTask: EditorTaskType = {
+        id: `${service.id}:editor`,
+        name: 'vscode',
+        projectDir: service.projectDir,
+        type: 'editor'
+      };
+
+      service.tasks = [editorTask, ...service.tasks];
+
+      return {
+        service
+      };
     });
-    const projectDir = selectedDirs[0];
-    const manifest = npmPackageParser(projectDir);
-
-    if (manifest instanceof Error) {
-      return;
-    }
-
-    const { name, npmscripts } = manifest;
-    service.name = name;
-    service.projectDir = projectDir;
-    const editorTask = {
-      id: `${service.id}:editor`,
-      projectDir: service.projectDir,
-      type: 'editor'
-    };
-    service.tasks = [editorTask, ...service.tasks];
-
-    this.setState(() => ({
-      service,
-      npmtasks: createNpmTasks(service.id, npmscripts)
-    }));
-  };
-
-  selectNpmScript = event => {
-    const selectedId = event.target.value;
-    const { npmtasks } = this.state;
-    const task = npmtasks.find(t => t.id === selectedId);
-
-    if (event.target.checked) {
-      this.addTask(task);
-    } else {
-      this.removeTask(task.id);
-    }
   };
 
   addTask = task => {
@@ -109,55 +88,27 @@ export default class ServiceCreate extends Component<Props> {
   };
 
   render() {
-    const { service, npmtasks } = this.state;
-    const { name, tasks, projectDir } = service;
-    console.log('HERE', tasks);
+    const { service } = this.state;
     return (
-      <div className={`${styles.container}`} data-tid="container">
+      <div className={`${styles.container}`}>
         <form onSubmit={this.handleSubmit}>
-          <div className="form-group">
-            <button
-              className="btn btn-default"
-              type="button"
-              onClick={this.setProjectDirWithDialog}
-            >
-              Select Nodejs Project
-            </button>
-            &nbsp;&nbsp;
-            <span>{projectDir || 'Not set'}</span>
-          </div>
           <div className="form-group">
             <label htmlFor="name">Service Name</label>
             <input
               type="text"
               id="name"
-              value={name}
-              onChange={this.handleChange}
+              value={service.name}
+              onChange={this.handleNameChange}
               className="form-control"
               placeholder="Service name"
             />
           </div>
-          <div className="checkbox">
-            <span>Select npm script</span>
-            {npmtasks.map((npmTask: TaskType) => {
-              const selected = !!tasks.find(t => t.id === npmTask.id);
-              return (
-                <div key={npmTask.id}>
-                  <label htmlFor={npmTask.id}>
-                    <input
-                      id={npmTask.id}
-                      value={npmTask.id}
-                      defaultChecked={selected}
-                      onChange={this.selectNpmScript}
-                      type="checkbox"
-                    />
-                    &nbsp;
-                    {npmTask.name}
-                  </label>
-                </div>
-              );
-            })}
-          </div>
+          <NodeServiceCreate
+            service={service}
+            setProjectDir={this.setProjectDir}
+            addTask={this.addTask}
+            removeTask={this.removeTask}
+          />
           <div className="form-actions">
             <button type="submit" className="btn btn-form btn-primary">
               Create
