@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 import styles from './Dashboard.css';
 import { ServiceType } from '../types/service';
-import ServiceComponent from './Services/ServiceComponent';
+import ServiceComponent from './ServicesInteraction/ServiceComponent';
 
 type Props = {
   services: Array<ServiceType>
