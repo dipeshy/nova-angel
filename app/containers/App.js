@@ -12,28 +12,28 @@ export default class App extends React.Component<Props> {
 
   render() {
     const { children } = this.props;
-    return <React.Fragment>
-      <div className='window'>
-        <header className="toolbar toolbar-header">
+    return (
+      <React.Fragment>
+        <div className="window">
+          <header className="toolbar toolbar-header">
             <div className="toolbar-actions">
               <div className="btn-group">
                 <Link to={routes.HOME} className="btn btn-default">
                   <span className="icon icon-home" />
                 </Link>
-                <Link to={routes.SERVICES_ADD} className="btn btn-default" >
+                <Link to={routes.SERVICES_ADD} className="btn btn-default">
                   <span className="icon icon-plus-circled" />
                   &nbsp;Add
                 </Link>
               </div>
             </div>
           </header>
-          <div className="window-content">
-            {children}
-          </div>
+          <div className="window-content">{children}</div>
           <footer className="toolbar toolbar-footer">
-            <h1 className="title">Footer</h1>
-        </footer>
-      </div>
-    </React.Fragment>;
+            <h1 className="title">2018</h1>
+          </footer>
+        </div>
+      </React.Fragment>
+    );
   }
 }

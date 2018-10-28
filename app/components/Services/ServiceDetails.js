@@ -21,14 +21,19 @@ export default class ServiceDetails extends Component<Props> {
   constructor(props) {
     super(props);
     const { service } = props;
-
-    const manifest = npmPackageParser(service.projectDir);
-    const { npmscripts } = manifest;
-
-    this.state = {
-      service,
-      npmtasks: createNpmTasks(service.id, npmscripts)
+    const state = {
+      service
     };
+
+    if (service.projectDir) {
+      const manifest = npmPackageParser(service.projectDir);
+      const { npmscripts } = manifest;
+      state.npmtasks = createNpmTasks(service.id, npmscripts);
+    } else {
+      state.npmtasks = [];
+    }
+
+    this.state = state;
   }
 
   handleChange = event => {

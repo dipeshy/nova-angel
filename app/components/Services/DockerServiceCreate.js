@@ -1,169 +1,201 @@
 // @flow
-import { v4 } from 'uuid';
 import React, { Component } from 'react';
 import styles from './DockerServiceCreate.css';
-import npmPackageParser from '../../utils/npm-package-parser';
 import { ServiceType } from '../../types/service';
-import createNpmTasks from '../../utils/npmtasks';
-
-const { dialog } = require('electron').remote;
+import { TaskType, DockerTaskType } from '../../types/task';
 
 type Props = {
-  createService: (service: ServiceType) => void,
-  history: {
-    push: () => void
-  }
+  service: ServiceType,
+  saveTask: (task: TaskType) => void
 };
 
 export default class DockerServiceCreate extends Component<Props> {
   props: Props;
 
+  state: {
+    task: DockerTaskType
+  };
+
   constructor(props) {
     super(props);
-    this.dialog = dialog;
+    const { service } = this.props;
+
     this.state = {
-      service: {
-        id: v4(),
-        name: '',
-        projectDir: '',
-        tasks: []
-      },
-      npmtasks: []
+      dirty: false,
+      currentport: '',
+      currentvolume: '',
+      currentenv: '',
+      task: {
+        id: `${service.id}:docker`,
+        name: service.name,
+        type: 'docker',
+        image: '',
+        container_name: service.name,
+        ports: [],
+        volumes: [],
+        args: {},
+        env: []
+      }
     };
   }
 
-  handleChange = event => {
+  handleInputChange = event => {
+    const { name, value } = event.target;
     this.setState({
-      name: event.target.value
+      [name]: value
     });
   };
 
-  handleSubmit = event => {
-    event.preventDefault();
-    const { createService, history } = this.props;
-    const { service } = this.state;
-
-    console.log('Creating service', service);
-    createService(service);
-    history.push('/');
+  handleChange = event => {
+    const { name, value } = event.target;
+    this.updateStateTask(name, value);
   };
 
-  setProjectDirWithDialog = () => {
-    const { service } = this.state;
-    const selectedDirs = this.dialog.showOpenDialog({
-      properties: ['openDirectory']
-    });
-    const projectDir = selectedDirs[0];
-    const manifest = npmPackageParser(projectDir);
-
-    if (manifest instanceof Error) {
-      return;
-    }
-
-    const { name, npmscripts } = manifest;
-    service.name = name;
-    service.projectDir = projectDir;
-    const editorTask = {
-      id: `${service.id}:editor`,
-      projectDir: service.projectDir,
-      type: 'editor'
-    };
-    service.tasks = [editorTask, ...service.tasks];
-
-    this.setState(() => ({
-      service,
-      npmtasks: createNpmTasks(service.id, npmscripts)
-    }));
-  };
-
-  selectNpmScript = event => {
-    const selectedId = event.target.value;
-    const { npmtasks } = this.state;
-    const task = npmtasks.find(t => t.id === selectedId);
-
-    if (event.target.checked) {
-      this.addTask(task);
-    } else {
-      this.removeTask(task.id);
-    }
-  };
-
-  addTask = task => {
-    console.log('Adding task', { task });
-    this.setState(prevState => {
-      const state = { ...prevState };
-      state.service.tasks.push(task);
-      return state;
+  transferValueToTask = (fromStateKey: string, toTaskKey: string) => () => {
+    const { state } = this;
+    this.updateStateTask(toTaskKey, state[fromStateKey]);
+    this.setState({
+      [fromStateKey]: ''
     });
   };
 
-  removeTask = id => {
-    console.log('Removing task', { id });
+  handleAddPort = this.transferValueToTask('currentport', 'ports');
 
-    this.setState(prevState => {
-      const state = { ...prevState };
-      const tasks = prevState.service.tasks.filter(task => id !== task.id);
-      state.service.tasks = tasks;
-      return state;
+  handleAddVolume = this.transferValueToTask('currentvolume', 'volumes');
+
+  handleAddEnv = this.transferValueToTask('currentenv', 'env');
+
+  updateStateTask = (field, value) => {
+    this.setState(state => {
+      const { task } = state;
+      if (Array.isArray(task[field])) {
+        task[field] = [...task[field], value];
+      } else {
+        task[field] = value;
+      }
+      return {
+        dirty: true,
+        task
+      };
+    });
+  };
+
+  handleSaveTask = () => {
+    const { saveTask } = this.props;
+    const { task } = this.state;
+    saveTask(task);
+    this.setState({
+      dirty: false
     });
   };
 
   render() {
-    const { service, npmtasks } = this.state;
-    const { name, tasks, projectDir } = service;
-    console.log('HERE', tasks);
+    const { task, currentport, currentvolume, currentenv, dirty } = this.state;
     return (
-      <div className={`${styles.container}`} data-tid="container">
-        <form onSubmit={this.handleSubmit}>
-          <div className="form-group">
+      <div className={`${styles.container}`}>
+        <div className="form-group">
+          <label htmlFor="image">Image</label>
+          <input
+            name="image"
+            type="text"
+            value={task.image}
+            onChange={this.handleChange}
+            className="form-control"
+            placeholder="Docker image"
+          />
+        </div>
+        <div className="form-group">
+          <label>Ports</label>
+          {task.ports.map(p => (
+            <div key={p}>{p}</div>
+          ))}
+          <input
+            name="currentport"
+            type="text"
+            value={currentport}
+            onChange={this.handleInputChange}
+            style={{
+              display: 'block',
+              width: '80%'
+            }}
+            className="form-control pull-left"
+            placeholder="8080:8080"
+          />
+          <button
+            onClick={this.handleAddPort}
+            type="button"
+            className="btn btn-large btn-default pull-right"
+          >
+            <span className="icon icon-plus" />
+            &nbsp;Add
+          </button>
+          <div className="clearfix" />
+        </div>
+        <div className="form-group">
+          <label>ENV Variables</label>
+          {task.env.map(x => (
+            <div key={x}>{x}</div>
+          ))}
+          <input
+            name="currentenv"
+            type="text"
+            value={currentenv}
+            onChange={this.handleInputChange}
+            style={{
+              display: 'block',
+              width: '80%'
+            }}
+            className="form-control pull-left"
+            placeholder="PORT=4000"
+          />
+          <button
+            onClick={this.handleAddEnv}
+            type="button"
+            className="btn btn-large btn-default pull-right"
+          >
+            <span className="icon icon-plus" />
+            &nbsp;Add
+          </button>
+          <div className="clearfix" />
+        </div>
+        <div className="form-group">
+          <label>Volumes</label>
+          {task.volumes.map(p => (
+            <div key={p}>{p}</div>
+          ))}
+          <input
+            name="currentvolume"
+            type="text"
+            value={currentvolume}
+            onChange={this.handleInputChange}
+            style={{
+              display: 'block',
+              width: '80%'
+            }}
+            className="form-control pull-left"
+            placeholder="~/postgresqldata:/var/lib/postgresql/data"
+          />
+          <button
+            onClick={this.handleAddVolume}
+            type="button"
+            className="btn btn-large btn-default pull-right"
+          >
+            <span className="icon icon-plus" />
+            &nbsp;Add
+          </button>
+          <div className="clearfix" />
+        </div>
+        <div className="form-actions">
+          {dirty && (
             <button
-              className="btn btn-default"
               type="button"
-              onClick={this.setProjectDirWithDialog}
+              onClick={this.handleSaveTask}
+              className="btn btn-mini btn-positive"
             >
-              Select Nodejs Project
+              Save
             </button>
-            &nbsp;&nbsp;
-            <span>{projectDir || 'Not set'}</span>
-          </div>
-          <div className="form-group">
-            <label htmlFor="name">Service Name</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={this.handleChange}
-              className="form-control"
-              placeholder="Service name"
-            />
-          </div>
-          <div className="checkbox">
-            <span>Select npm script</span>
-            {npmtasks.map((npmTask: TaskType) => {
-              const selected = !!tasks.find(t => t.id === npmTask.id);
-              return (
-                <div key={npmTask.id}>
-                  <label htmlFor={npmTask.id}>
-                    <input
-                      id={npmTask.id}
-                      value={npmTask.id}
-                      defaultChecked={selected}
-                      onChange={this.selectNpmScript}
-                      type="checkbox"
-                    />
-                    &nbsp;
-                    {npmTask.name}
-                  </label>
-                </div>
-              );
-            })}
-          </div>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-form btn-primary">
-              Create
-            </button>
-          </div>
-        </form>
+          )}
+        </div>
       </div>
     );
   }

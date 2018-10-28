@@ -37,3 +37,11 @@ a:hover {
   text-decoration: none;
   cursor: pointer;
 }
+
+.alert-error {
+  padding: 5px 10px;
+  background: rgb(241, 158, 158);
+  border: 1px solid #b02020;
+  color: #b02020;
+  margin-bottom: 10px;
+}
