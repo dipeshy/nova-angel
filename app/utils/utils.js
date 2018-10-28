@@ -55,9 +55,12 @@ export function createWindowWithHtml(title, html) {
     window.maximize();
     window.show();
     window.setTitle(title);
+    // For debugging production
+    // window.webContents.openDevTools();
   });
 
-  window.loadFile(html);
+  console.log('Loading html file', html);
+  window.loadURL(html);
   return window;
 }
 

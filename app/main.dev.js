@@ -14,15 +14,31 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import MenuBuilder from './menu';
 import createTaskRunner from './utils/task-runner';
 
+// const childProcess = require('child_process');
+// childProcess.spawn('/usr/local/bin/code', ['/Users/yadavdip/Projects/aws']);
+
 // If a relative path, it's relative to the default cwd. ~/Library/Application Support/App Name/unicorn.
 process.env.CWD = process.env.CWD || app.getPath('userData');
 console.log('Current working directory', process.env.CWD);
 
+process.env.PATH = [process.env.PATH, '/usr/local/bin'].join(':');
+
 let mainWindow = null;
-const taskRunner = createTaskRunner(process.env.CWD, (...args) => {
-  mainWindow.webContents.send('message', ...args);
-  console.log(...args);
-});
+const taskRunner = createTaskRunner(
+  process.env.CWD,
+  (...args) => {
+    mainWindow.webContents.send(
+      'message',
+      {
+        PATH: process.env.PATH,
+        SHELL: process.env.SHELL
+      },
+      ...args
+    );
+    console.log(...args);
+  },
+  `file://${__dirname}/console.html`
+);
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -83,7 +99,8 @@ app.on('ready', async () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
     }
-    mainWindow.webContents.openDevTools();
+    // Debugging production
+    // mainWindow.webContents.openDevTools();
     if (process.env.START_MINIMIZED) {
       mainWindow.minimize();
     } else {

@@ -15,7 +15,10 @@ const runningTasks = {};
 let LOGS_PATH: string;
 let debug;
 
-export default function createTaskRunner(cwd, logger) {
+const NPMSCRIPT_BIN = '/usr/local/bin/npx';
+const CODE_BIN = '/usr/local/bin/code';
+
+export default function createTaskRunner(cwd, logger, consoleHtml) {
   LOGS_PATH = resolve(cwd, 'logs');
   debug = logger;
   cleanAndCreateDir(LOGS_PATH);
@@ -26,10 +29,10 @@ export default function createTaskRunner(cwd, logger) {
     task: TaskType
   ) {
     debug(
-      `Received Task: ${taskName} (${serviceContext.name}:${
+      `Running Task: ${taskName} (${serviceContext.name}: ${
         serviceContext.id
       })`,
-      JSON.stringify({ task })
+      JSON.stringify({ task, NPMSCRIPT_BIN, CODE_BIN })
     );
     switch (taskName) {
       case EDITOR_OPEN:
@@ -37,13 +40,13 @@ export default function createTaskRunner(cwd, logger) {
         break;
       case NPMSCRIPT_START:
         npmscriptStart(serviceContext, task);
-        createOpenConsole(task);
+        createOpenConsole(task, consoleHtml);
         break;
       case NPMSCRIPT_STOP:
         npmscriptStop(serviceContext, task);
         break;
       case NPMSCRIPT_VIEWLOG:
-        createOpenConsole(task);
+        createOpenConsole(task, consoleHtml);
         break;
       default:
         debug('Unknown task', { taskName, task });
@@ -52,7 +55,7 @@ export default function createTaskRunner(cwd, logger) {
 }
 
 function openEditor(serviceContext: ServiceType, task: EditorTaskType) {
-  const process = runCommand('code', [task.projectDir]);
+  const process = runCommand(CODE_BIN, [task.projectDir]);
   process.on('close', () => debug(`openEditor closed: ${serviceContext.name}`));
   process.on('exit', () => debug(`openEditor exit: ${serviceContext.name}`));
 }
@@ -62,7 +65,7 @@ function npmscriptStart(serviceContext: ServiceType, task: NpmTaskType) {
   const taskData = (runningTasks[task.id] = runningTasks[task.id] || {});
 
   if (!taskData.process) {
-    taskData.process = runCommand('yarn', task.cmd.split(' '), {
+    taskData.process = runCommand(NPMSCRIPT_BIN, task.cmd.split(' '), {
       cwd: serviceContext.projectDir
     });
 
@@ -109,7 +112,7 @@ function handleTaskExit(task) {
   }
 }
 
-function createOpenConsole(task: NpmTaskType) {
+function createOpenConsole(task: NpmTaskType, consoleHtml: string) {
   const taskData = (runningTasks[task.id] = runningTasks[task.id] || {});
 
   if (taskData.consoleWindow) {
@@ -121,7 +124,7 @@ function createOpenConsole(task: NpmTaskType) {
   // ==============================
   const consoleWindow = createWindowWithHtml(
     `Console: ${task.name}`,
-    resolve(__dirname, 'ui', 'console.html')
+    consoleHtml
   );
   consoleWindow.once('ready-to-show', () => {
     consoleWindow.show();

@@ -1,7 +1,7 @@
 {
   "name": "nova",
   "productName": "Nova",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "versionCode": "Angel",
   "description": "Nodejs microservices development hub",
   "scripts": {
@@ -23,7 +23,7 @@
     "package-ci": "yarn postinstall && yarn build && electron-builder --publish always",
     "package-linux": "yarn build && electron-builder build --linux",
     "package-win": "yarn build && electron-builder build --win --x64",
-    "package-osx": "yarn build && electron-builder build --macos --x64",
+    "package-osx": "rimraf release && yarn build && electron-builder build --macos --x64",
     "postinstall": "node -r babel-register internals/scripts/CheckNativeDep.js && yarn flow-typed && yarn build-dll && electron-builder install-app-deps package.json",
     "postlint-fix": "prettier --ignore-path .eslintignore --single-quote --write '**/*.{*{js,jsx,json},babelrc,eslintrc,prettierrc,stylelintrc}'",
     "postlint-styles-fix": "prettier --ignore-path .eslintignore --single-quote --write '**/*.{css,scss}'",
@@ -61,10 +61,12 @@
   },
   "build": {
     "productName": "Nova",
-    "appId": "org.dipeshy.Nova",
+    "appId": "org.dipeshy.nova",
     "files": [
       "dist/",
+      "ui/",
       "node_modules/",
+      "console.html",
       "app.html",
       "main.prod.js",
       "main.prod.js.map",
