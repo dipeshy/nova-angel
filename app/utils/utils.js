@@ -6,17 +6,40 @@ const VERSION = '0.0.1';
 
 export const version = () => VERSION;
 
-export function cleanAndCreateDir(targetDir) {
-  rimraf(targetDir, () => {
+export function cleanAndCreateDir(targetDir, cb = () => {}) {
+  deleteDir(targetDir, err => {
+    if (err) {
+      cb(err);
+      return;
+    }
+
     console.log(`Cleaned dir: ${targetDir}`);
-    mkdir(targetDir, err => {
+
+    mkdir(targetDir, mkdirErr => {
       if (err) {
-        console.log(`Error creating dir: ${targetDir}`, err.message, err.stack);
+        console.log(
+          `Error creating dir: ${targetDir}`,
+          mkdirErr.message,
+          mkdirErr.stack
+        );
+        cb(mkdirErr);
         return;
       }
 
       console.log(`Successfully cleaned and created dir: ${targetDir}`);
+      cb(null, targetDir);
     });
+  });
+}
+
+export function deleteDir(target, cb = () => {}) {
+  rimraf(target, err => {
+    if (err) {
+      cb(err);
+      return;
+    }
+
+    cb(null);
   });
 }
 

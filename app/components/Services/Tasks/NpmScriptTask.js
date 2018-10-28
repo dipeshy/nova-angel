@@ -10,7 +10,6 @@ import {
 import npmLogo from '../../../assets/npm.png';
 import { getClassname } from '../../../utils/utils';
 
-console.log(styles);
 type Props = {
   task: NpmTaskType,
   invokeTask: (taskName: string, task: TaskType) => void
@@ -52,7 +51,7 @@ export default class NpmScriptTask extends Component<Props> {
         <span className={getClassname(styles.name)}> {task.name} </span>
         <span
           style={{
-            marginLeft: '7px',
+            marginLeft: 'auto',
             fontSize: '1.2em',
             color: 'green',
             cursor: 'pointer'

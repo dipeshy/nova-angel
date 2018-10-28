@@ -1,5 +1,7 @@
 .services-container {
   display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
   padding-left: 10px;
   padding-top: 15px;
 }

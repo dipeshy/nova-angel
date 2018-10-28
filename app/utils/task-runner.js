@@ -9,7 +9,7 @@ import {
 } from '../constants/tasks-constants';
 import { TaskType, NpmTaskType, EditorTaskType } from '../types/task';
 import { ServiceType } from '../types/service';
-import { cleanAndCreateDir, createWindowWithHtml } from './utils';
+import { deleteDir, cleanAndCreateDir, createWindowWithHtml } from './utils';
 
 const runningTasks = {};
 let LOGS_PATH: string;
@@ -23,7 +23,12 @@ export default function createTaskRunner(cwd) {
     taskName,
     task: TaskType
   ) {
-    console.log(`Received Task`, { serviceContext, taskName, task });
+    console.log(
+      `Received Task: ${taskName} (${serviceContext.name}:${
+        serviceContext.id
+      })`,
+      JSON.stringify({ task })
+    );
     switch (taskName) {
       case EDITOR_OPEN:
         openEditor(serviceContext, task);
@@ -44,8 +49,14 @@ export default function createTaskRunner(cwd) {
   };
 }
 
-function openEditor(_: ServiceType, task: EditorTaskType) {
-  return runCommand('code', [task.projectDir]);
+function openEditor(serviceContext: ServiceType, task: EditorTaskType) {
+  const process = runCommand('code', [task.projectDir]);
+  process.on('close', () =>
+    console.log(`openEditor closed: ${serviceContext.name}`)
+  );
+  process.on('exit', () =>
+    console.log(`openEditor exit: ${serviceContext.name}`)
+  );
 }
 
 // Mutates taskData
@@ -56,17 +67,21 @@ function npmscriptStart(serviceContext: ServiceType, task: NpmTaskType) {
     taskData.process = runCommand('yarn', task.cmd.split(' '), {
       cwd: serviceContext.projectDir
     });
-    // Mutates taskData
-    attachConsoleLogView(taskData.process, task.id);
 
-    taskData.process.on('exit', () => {
-      console.log('Task terminating', {
-        pid: taskData.process.pid,
-        task
-      });
+    taskData.process.on('close', () => {
+      console.log(
+        'Task terminating',
+        JSON.stringify({
+          pid: taskData.process.pid,
+          task
+        })
+      );
       handleTaskExit(task);
       taskData.process = null;
     });
+
+    // Mutates taskData
+    attachConsoleLogView(taskData.process, task.id);
   }
 }
 
@@ -79,6 +94,7 @@ function handleTaskExit(task) {
   if (taskData.logstream) {
     taskData.logstream.end();
     taskData.logstream = null;
+    deleteDir(taskData.logFile);
   }
 
   if (taskData.consoleWindow) {

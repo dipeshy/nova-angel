@@ -29,7 +29,6 @@ export default class ServiceComponent extends Component<Props> {
     const { service } = this.props;
     const { tasks } = service;
     const groupedTasks = this.groupByTasks(tasks);
-    console.log(groupedTasks);
     const editor = groupedTasks.editor || [];
     const npmscript = groupedTasks.npmscript || [];
     return (
