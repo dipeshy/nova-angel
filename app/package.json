@@ -1,13 +1,14 @@
 {
-  "name": "electron-react-boilerplate",
-  "productName": "electron-react-boilerplate",
-  "version": "0.16.0",
-  "description": "Electron application boilerplate based on React, React Router, Webpack, React Hot Loader for rapid application development",
+  "name": "nova",
+  "productName": "Nova",
+  "version": "0.0.1",
+  "versionCode": "Angel",
+  "description": "Nodejs microservices development hub",
   "main": "./main.prod.js",
   "author": {
-    "name": "John Doe",
-    "email": "johndoe@gmail.com",
-    "url": "https://github.com/johndoe"
+    "name": "Dipesh Yadav",
+    "email": "maxdipesh@gmail.com",
+    "url": "https://github.com/dipeshy"
   },
   "scripts": {
     "electron-rebuild": "node -r babel-register ../internals/scripts/ElectronRebuild.js",
