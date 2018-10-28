@@ -18,9 +18,11 @@ import createTaskRunner from './utils/task-runner';
 process.env.CWD = process.env.CWD || app.getPath('userData');
 console.log('Current working directory', process.env.CWD);
 
-const taskRunner = createTaskRunner(process.env.CWD);
-
 let mainWindow = null;
+const taskRunner = createTaskRunner(process.env.CWD, (...args) => {
+  mainWindow.webContents.send('message', ...args);
+  console.log(...args);
+});
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -81,6 +83,7 @@ app.on('ready', async () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
     }
+    mainWindow.webContents.openDevTools();
     if (process.env.START_MINIMIZED) {
       mainWindow.minimize();
     } else {
@@ -98,5 +101,16 @@ app.on('ready', async () => {
 });
 
 ipcMain.on('Task', (event, serviceContext, taskName, params) => {
-  taskRunner(serviceContext, taskName, params);
+  try {
+    taskRunner(serviceContext, taskName, params);
+  } catch (err) {
+    const message = `Error running task ${taskName}`;
+    const details = {
+      taskName,
+      params,
+      err
+    };
+    console.error(message, details);
+    mainWindow.webContents.send('error', message, details);
+  }
 });

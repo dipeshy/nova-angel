@@ -13,9 +13,11 @@ import { deleteDir, cleanAndCreateDir, createWindowWithHtml } from './utils';
 
 const runningTasks = {};
 let LOGS_PATH: string;
+let debug;
 
-export default function createTaskRunner(cwd) {
+export default function createTaskRunner(cwd, logger) {
   LOGS_PATH = resolve(cwd, 'logs');
+  debug = logger;
   cleanAndCreateDir(LOGS_PATH);
 
   return function taskRunner(
@@ -23,7 +25,7 @@ export default function createTaskRunner(cwd) {
     taskName,
     task: TaskType
   ) {
-    console.log(
+    debug(
       `Received Task: ${taskName} (${serviceContext.name}:${
         serviceContext.id
       })`,
@@ -44,19 +46,15 @@ export default function createTaskRunner(cwd) {
         createOpenConsole(task);
         break;
       default:
-        console.log('Unknown task', { taskName, task });
+        debug('Unknown task', { taskName, task });
     }
   };
 }
 
 function openEditor(serviceContext: ServiceType, task: EditorTaskType) {
   const process = runCommand('code', [task.projectDir]);
-  process.on('close', () =>
-    console.log(`openEditor closed: ${serviceContext.name}`)
-  );
-  process.on('exit', () =>
-    console.log(`openEditor exit: ${serviceContext.name}`)
-  );
+  process.on('close', () => debug(`openEditor closed: ${serviceContext.name}`));
+  process.on('exit', () => debug(`openEditor exit: ${serviceContext.name}`));
 }
 
 // Mutates taskData
@@ -69,7 +67,7 @@ function npmscriptStart(serviceContext: ServiceType, task: NpmTaskType) {
     });
 
     taskData.process.on('close', () => {
-      console.log(
+      debug(
         'Task terminating',
         JSON.stringify({
           pid: taskData.process.pid,
@@ -146,7 +144,7 @@ function attachConsoleLogView(process, taskId: string) {
   taskData.logFile = resolve(LOGS_PATH, taskId);
   taskData.logstream = createWriteStream(taskData.logFile);
   taskData.logstream.on('close', () => {
-    console.log(`Closing log stream: ${taskData.logFile}`);
+    debug(`Closing log stream: ${taskData.logFile}`);
   });
 
   const outputWriter = createOutputWriter(taskId);

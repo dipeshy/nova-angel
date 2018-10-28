@@ -1,3 +1,4 @@
+import { ipcRenderer } from 'electron';
 import React from 'react';
 import { render } from 'react-dom';
 import { AppContainer } from 'react-hot-loader';
@@ -5,6 +6,13 @@ import Root from './containers/Root';
 import { configureStore, history } from './store/configureStore';
 import './app.global.css';
 import persistentStore from './utils/store';
+
+ipcRenderer.on('message', (event, ...messages) => {
+  console.log('main:', ...messages);
+});
+ipcRenderer.on('error', (event, ...messages) => {
+  console.error('main:', ...messages);
+});
 
 const store = configureStore({
   counter: 0,
