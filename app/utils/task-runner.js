@@ -19,13 +19,14 @@ import {
 import { ServiceType } from '../types/service';
 import { deleteDir, cleanAndCreateDir, createWindowWithHtml } from './utils';
 
-const runningTasks = {};
 let LOGS_PATH: string;
 let debug;
 
-const NPMSCRIPT_BIN = '/usr/local/bin/npx';
+const NPMSCRIPT_BIN = 'yarn';
 const CODE_BIN = '/usr/local/bin/code';
 const DOCKER_BIN = '/usr/local/bin/docker';
+
+global.runningTasks = {};
 
 export default function createTaskRunner(cwd, logger, consoleHtml) {
   LOGS_PATH = resolve(cwd, 'logs');
@@ -128,7 +129,8 @@ function taskStart(
   task: TaskType,
   cmdDescription
 ) {
-  const taskData = (runningTasks[task.id] = runningTasks[task.id] || {});
+  const taskData = (global.runningTasks[task.id] =
+    global.runningTasks[task.id] || {});
   const { cmd, args } = cmdDescription;
   debug(`Task running ${cmd} ${args.join(' ')}`);
 
@@ -155,11 +157,16 @@ function taskStart(
 }
 
 function taskStop(serviceContext, task: TaskType) {
-  runningTasks[task.id].process.kill('SIGTERM');
+  const { process } = global.runningTasks[task.id];
+  if (process) {
+    console.log(`Sending SIGTERM to process ${process.pid}`);
+    process.kill('SIGTERM');
+  }
 }
 
 function handleTaskExit(task) {
-  const taskData = (runningTasks[task.id] = runningTasks[task.id] || {});
+  const taskData = (global.runningTasks[task.id] =
+    global.runningTasks[task.id] || {});
   if (taskData.logstream) {
     taskData.logstream.end();
     taskData.logstream = null;
@@ -181,7 +188,8 @@ function handleTaskExit(task) {
 }
 
 function createOpenConsole(task: TaskType, consoleHtml: string) {
-  const taskData = (runningTasks[task.id] = runningTasks[task.id] || {});
+  const taskData = (global.runningTasks[task.id] =
+    global.runningTasks[task.id] || {});
 
   if (taskData.consoleWindow) {
     taskData.consoleWindow.focus();
@@ -210,9 +218,13 @@ function createOpenConsole(task: TaskType, consoleHtml: string) {
 }
 
 function attachConsoleLogView(process, taskId: string) {
-  const taskData = (runningTasks[taskId] = runningTasks[taskId] || {});
+  const taskData = (global.runningTasks[taskId] =
+    global.runningTasks[taskId] || {});
 
-  taskData.logFile = resolve(LOGS_PATH, taskId);
+  taskData.logFile = resolve(
+    LOGS_PATH,
+    `${taskId.replace(':', '-')}-${process.pid}`
+  );
   taskData.logstream = createWriteStream(taskData.logFile);
   taskData.logstream.on('close', () => {
     debug(`Closing log stream: ${taskData.logFile}`);
@@ -225,7 +237,8 @@ function attachConsoleLogView(process, taskId: string) {
 
 function createOutputWriter(taskId) {
   return data => {
-    const taskData = (runningTasks[taskId] = runningTasks[taskId] || {});
+    const taskData = (global.runningTasks[taskId] =
+      global.runningTasks[taskId] || {});
     if (taskData.logstream) {
       taskData.logstream.write(data);
     }

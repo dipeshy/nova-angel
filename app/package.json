@@ -1,7 +1,7 @@
 {
   "name": "nova",
   "productName": "Nova",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "versionCode": "Angel",
   "description": "Nodejs microservices development hub",
   "main": "./main.prod.js",

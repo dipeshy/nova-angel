@@ -14,6 +14,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import MenuBuilder from './menu';
 import createTaskRunner from './utils/task-runner';
 
+global.runningTasks = {};
 // const childProcess = require('child_process');
 // childProcess.spawn('/usr/local/bin/code', ['/Users/yadavdip/Projects/aws']);
 
@@ -21,7 +22,9 @@ import createTaskRunner from './utils/task-runner';
 process.env.CWD = process.env.CWD || app.getPath('userData');
 console.log('Current working directory', process.env.CWD);
 
-process.env.PATH = [process.env.PATH, '/usr/local/bin'].join(':');
+process.env.PATH = [process.env.PATH, '/usr/local/bin', '~/.yarn/bin'].join(
+  ':'
+);
 
 let mainWindow = null;
 const taskRunner = createTaskRunner(
@@ -117,6 +120,10 @@ app.on('ready', async () => {
   menuBuilder.buildMenu();
 });
 
+app.on('will-quit', () => {
+  stopAllTasks();
+});
+
 ipcMain.on('Task', (event, serviceContext, taskName, params) => {
   try {
     taskRunner(serviceContext, taskName, params);
@@ -131,3 +138,25 @@ ipcMain.on('Task', (event, serviceContext, taskName, params) => {
     mainWindow.webContents.send('error', message, details);
   }
 });
+
+process.on('SIGTERM', (...args) => {
+  console.log('signal', ...args);
+  stopAllTasks();
+});
+process.once('SIGUSR2', () => {
+  stopAllTasks(() => {
+    console.log('Stopping all tasks');
+    process.kill(process.pid, 'SIGUSR2');
+  });
+});
+
+function stopAllTasks(cb) {
+  console.log('Stopping all tasks');
+  Object.keys(global.runningTasks).forEach(taskId => {
+    const { process } = global.runningTasks[taskId];
+    if (process) {
+      process.kill('SIGTERM');
+    }
+  });
+  if (cb) cb();
+}
