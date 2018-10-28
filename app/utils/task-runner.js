@@ -5,9 +5,17 @@ import {
   EDITOR_OPEN,
   NPMSCRIPT_START,
   NPMSCRIPT_STOP,
-  NPMSCRIPT_VIEWLOG
+  NPMSCRIPT_VIEWLOG,
+  DOCKER_START,
+  DOCKER_STOP,
+  DOCKER_VIEWLOG
 } from '../constants/tasks-constants';
-import { TaskType, NpmTaskType, EditorTaskType } from '../types/task';
+import {
+  TaskType,
+  NpmTaskType,
+  EditorTaskType,
+  DockerTaskType
+} from '../types/task';
 import { ServiceType } from '../types/service';
 import { deleteDir, cleanAndCreateDir, createWindowWithHtml } from './utils';
 
@@ -17,6 +25,7 @@ let debug;
 
 const NPMSCRIPT_BIN = '/usr/local/bin/npx';
 const CODE_BIN = '/usr/local/bin/code';
+const DOCKER_BIN = '/usr/local/bin/docker';
 
 export default function createTaskRunner(cwd, logger, consoleHtml) {
   LOGS_PATH = resolve(cwd, 'logs');
@@ -39,13 +48,27 @@ export default function createTaskRunner(cwd, logger, consoleHtml) {
         openEditor(serviceContext, task);
         break;
       case NPMSCRIPT_START:
-        npmscriptStart(serviceContext, task);
+        taskStart(serviceContext, task, parseNpmCommand(serviceContext, task));
         createOpenConsole(task, consoleHtml);
         break;
       case NPMSCRIPT_STOP:
-        npmscriptStop(serviceContext, task);
+        taskStop(serviceContext, task);
         break;
       case NPMSCRIPT_VIEWLOG:
+        createOpenConsole(task, consoleHtml);
+        break;
+      case DOCKER_START:
+        taskStart(
+          serviceContext,
+          task,
+          parseDockerCommand(serviceContext, task)
+        );
+        createOpenConsole(task, consoleHtml);
+        break;
+      case DOCKER_STOP:
+        taskStop(serviceContext, task);
+        break;
+      case DOCKER_VIEWLOG:
         createOpenConsole(task, consoleHtml);
         break;
       default:
@@ -60,12 +83,57 @@ function openEditor(serviceContext: ServiceType, task: EditorTaskType) {
   process.on('exit', () => debug(`openEditor exit: ${serviceContext.name}`));
 }
 
+function parseNpmCommand(serviceContext: ServiceType, task: NpmTaskType) {
+  return {
+    cmd: NPMSCRIPT_BIN,
+    args: task.cmd.split(' ')
+  };
+}
+
+function parseDockerCommand(serviceContext: ServiceType, task: DockerTaskType) {
+  const cmd = DOCKER_BIN;
+  const args = [];
+
+  args.push('run');
+  args.push('--rm');
+  // Uncomment for interactive termial
+  // args.push('-it');
+  args.push('--name');
+  args.push(`${task.container_name}-${serviceContext.id}`);
+  task.ports.forEach(port => {
+    args.push('-p');
+    args.push(port);
+  });
+
+  task.env.forEach(singleEnv => {
+    args.push('-e');
+    args.push(singleEnv);
+  });
+
+  task.volumes.forEach(volume => {
+    args.push('-v');
+    args.push(volume);
+  });
+
+  args.push(task.image);
+
+  return {
+    cmd,
+    args
+  };
+}
 // Mutates taskData
-function npmscriptStart(serviceContext: ServiceType, task: NpmTaskType) {
+function taskStart(
+  serviceContext: ServiceType,
+  task: TaskType,
+  cmdDescription
+) {
   const taskData = (runningTasks[task.id] = runningTasks[task.id] || {});
+  const { cmd, args } = cmdDescription;
+  debug(`Task running ${cmd} ${args.join(' ')}`);
 
   if (!taskData.process) {
-    taskData.process = runCommand(NPMSCRIPT_BIN, task.cmd.split(' '), {
+    taskData.process = runCommand(cmd, args, {
       cwd: serviceContext.projectDir
     });
 
@@ -86,7 +154,7 @@ function npmscriptStart(serviceContext: ServiceType, task: NpmTaskType) {
   }
 }
 
-function npmscriptStop(serviceContext, task: TaskType) {
+function taskStop(serviceContext, task: TaskType) {
   runningTasks[task.id].process.kill('SIGTERM');
 }
 
@@ -112,7 +180,7 @@ function handleTaskExit(task) {
   }
 }
 
-function createOpenConsole(task: NpmTaskType, consoleHtml: string) {
+function createOpenConsole(task: TaskType, consoleHtml: string) {
   const taskData = (runningTasks[task.id] = runningTasks[task.id] || {});
 
   if (taskData.consoleWindow) {

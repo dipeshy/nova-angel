@@ -8,6 +8,7 @@ import { ServiceType } from '../../types/service';
 import { TaskType } from '../../types/task';
 import styles from './ServiceComponent.css';
 import EditorTask from './Tasks/EditorTask';
+import DockerTask from './Tasks/DockerTask';
 import NpmScriptTask from './Tasks/NpmScriptTask';
 
 type Props = {
@@ -31,6 +32,8 @@ export default class ServiceComponent extends Component<Props> {
     const groupedTasks = this.groupByTasks(tasks);
     const editor = groupedTasks.editor || [];
     const npmscript = groupedTasks.npmscript || [];
+    const docker = groupedTasks.docker || [];
+
     return (
       <section className={`${styles.container}`} data-tid="container">
         <header className="title">
@@ -51,6 +54,13 @@ export default class ServiceComponent extends Component<Props> {
         <div>
           {editor.map(task => (
             <EditorTask
+              key={task.id}
+              task={task}
+              invokeTask={this.invokeTask}
+            />
+          ))}
+          {docker.map(task => (
+            <DockerTask
               key={task.id}
               task={task}
               invokeTask={this.invokeTask}

@@ -94,6 +94,18 @@ export default class DockerServiceCreate extends Component<Props> {
     return (
       <div className={`${styles.container}`}>
         <div className="form-group">
+          <label htmlFor="container_name">Container name</label>
+          <input
+            id="container_name"
+            name="container_name"
+            type="text"
+            value={task.container_name}
+            onChange={this.handleChange}
+            className="form-control"
+            placeholder="Docker Container Name"
+          />
+        </div>
+        <div className="form-group">
           <label htmlFor="image">Image</label>
           <input
             name="image"
@@ -146,7 +158,7 @@ export default class DockerServiceCreate extends Component<Props> {
               width: '80%'
             }}
             className="form-control pull-left"
-            placeholder="PORT=4000"
+            placeholder="NODE_ENV=production"
           />
           <button
             onClick={this.handleAddEnv}
