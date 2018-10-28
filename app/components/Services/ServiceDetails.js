@@ -1,10 +1,12 @@
 // @flow
 import React, { Component } from 'react';
+import { groupBy } from 'rambda';
 import styles from './ServiceDetails.css';
 import { ServiceType } from '../../types/service';
 import { TaskType } from '../../types/task';
 import npmPackageParser from '../../utils/npm-package-parser';
 import createNpmTasks from '../../utils/npmtasks';
+import DockerServiceCreate from './DockerServiceCreate';
 
 type Props = {
   service: ServiceType,
@@ -36,6 +38,8 @@ export default class ServiceDetails extends Component<Props> {
     this.state = state;
   }
 
+  groupByTasks = groupBy(task => task.type);
+
   handleChange = event => {
     const { service } = this.state;
     service.name = event.target.value;
@@ -61,6 +65,29 @@ export default class ServiceDetails extends Component<Props> {
     this.setState(prevState => {
       const state = { ...prevState };
       state.service.tasks.push(task);
+      return state;
+    });
+  };
+
+  saveTask = task => {
+    const { service } = this.state;
+    const found = service.tasks.find(x => x.id === task.id);
+
+    if (found) {
+      this.updateTask(task);
+    } else {
+      this.addTask(task);
+    }
+  };
+
+  updateTask = targetTask => {
+    console.log('Updating task', { targetTask });
+    this.setState(prevState => {
+      const state = { ...prevState };
+      const tasks = prevState.service.tasks.map(
+        task => (targetTask.id === task.id ? task : targetTask)
+      );
+      state.service.tasks = tasks;
       return state;
     });
   };
@@ -98,6 +125,8 @@ export default class ServiceDetails extends Component<Props> {
     const { service, npmtasks } = this.state;
     const name = service.name || '';
     const tasks = service.tasks || [];
+    const groupedTasks = this.groupByTasks(tasks);
+    const docker = groupedTasks.docker || [];
 
     return (
       <div className={`${styles.container}`} data-tid="container">
@@ -138,6 +167,15 @@ export default class ServiceDetails extends Component<Props> {
               );
             })}
           </div>
+          {docker.map(task => (
+            <DockerServiceCreate
+              key={task.id}
+              service={service}
+              task={task}
+              saveTask={this.saveTask}
+              addTask={this.addTask}
+            />
+          ))}
           <div className="form-actions">
             <button type="submit" className="btn btn-form btn-primary">
               Save

@@ -6,7 +6,8 @@ import { TaskType, DockerTaskType } from '../../types/task';
 
 type Props = {
   service: ServiceType,
-  saveTask: (task: TaskType) => void
+  saveTask: (task: TaskType) => void,
+  task: DockerTaskType | undefined
 };
 
 export default class DockerServiceCreate extends Component<Props> {
@@ -18,24 +19,28 @@ export default class DockerServiceCreate extends Component<Props> {
 
   constructor(props) {
     super(props);
-    const { service } = this.props;
+    const { service } = props;
+
+    const task = props.task
+      ? props.task
+      : {
+          id: `${service.id}:docker`,
+          name: service.name,
+          type: 'docker',
+          image: '',
+          container_name: '',
+          ports: [],
+          volumes: [],
+          args: {},
+          env: []
+        };
 
     this.state = {
       dirty: false,
       currentport: '',
       currentvolume: '',
       currentenv: '',
-      task: {
-        id: `${service.id}:docker`,
-        name: service.name,
-        type: 'docker',
-        image: '',
-        container_name: service.name,
-        ports: [],
-        volumes: [],
-        args: {},
-        env: []
-      }
+      task
     };
   }
 
