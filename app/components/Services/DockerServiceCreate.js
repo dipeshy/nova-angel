@@ -1,11 +1,9 @@
 // @flow
 import React, { Component } from 'react';
 import styles from './DockerServiceCreate.css';
-import { ServiceType } from '../../types/service';
 import { TaskType, DockerTaskType } from '../../types/task';
 
 type Props = {
-  service: ServiceType,
   saveTask: (task: TaskType) => void,
   task: DockerTaskType | undefined
 };
@@ -19,28 +17,11 @@ export default class DockerServiceCreate extends Component<Props> {
 
   constructor(props) {
     super(props);
-    const { service } = props;
-
-    const task = props.task
-      ? props.task
-      : {
-          id: `${service.id}:docker`,
-          name: service.name,
-          type: 'docker',
-          image: '',
-          container_name: '',
-          ports: [],
-          volumes: [],
-          args: {},
-          env: []
-        };
 
     this.state = {
-      dirty: false,
       currentport: '',
       currentvolume: '',
-      currentenv: '',
-      task
+      currentenv: ''
     };
   }
 
@@ -53,12 +34,17 @@ export default class DockerServiceCreate extends Component<Props> {
 
   handleChange = event => {
     const { name, value } = event.target;
-    this.updateStateTask(name, value);
+    this.updateTask(name, value);
   };
 
   transferValueToTask = (fromStateKey: string, toTaskKey: string) => () => {
     const { state } = this;
-    this.updateStateTask(toTaskKey, state[fromStateKey]);
+    const value = state[fromStateKey].trim();
+    if (!value) {
+      return;
+    }
+    this.updateTask(toTaskKey, value);
+    // Clear temp input field
     this.setState({
       [fromStateKey]: ''
     });
@@ -70,41 +56,60 @@ export default class DockerServiceCreate extends Component<Props> {
 
   handleAddEnv = this.transferValueToTask('currentenv', 'env');
 
-  updateStateTask = (field, value) => {
-    this.setState(state => {
-      const { task } = state;
-      if (Array.isArray(task[field])) {
-        task[field] = [...task[field], value];
-      } else {
-        task[field] = value;
-      }
-      return {
-        dirty: true,
-        task
-      };
-    });
+  removeMatchingValueFromList = (field: string, value: string) => {
+    const task = this.getTask();
+    const { saveTask } = this.props;
+    task[field] = task[field].filter(t => t !== value);
+    saveTask(task);
   };
 
-  handleSaveTask = () => {
+  updateTask = (field, value) => {
+    const task = this.getTask();
     const { saveTask } = this.props;
-    const { task } = this.state;
+    if (Array.isArray(task[field])) {
+      task[field] = [...task[field], value];
+    } else {
+      task[field] = value;
+    }
+
+    // Update also name field for container to match container_name
+    if (field === 'name') {
+      task.container_name = value.replace(/\s/, '_');
+    }
     saveTask(task);
-    this.setState({
-      dirty: false
-    });
+  };
+
+  getTask = (): DockerTaskType => {
+    const { task } = this.props;
+    if (task) {
+      return task;
+    }
+
+    return {
+      id: '',
+      name: '',
+      type: 'docker',
+      image: '',
+      container_name: '',
+      ports: [],
+      volumes: [],
+      args: {},
+      env: []
+    };
   };
 
   render() {
-    const { task, currentport, currentvolume, currentenv, dirty } = this.state;
+    const { currentport, currentvolume, currentenv } = this.state;
+    const task: DockerTaskType = this.getTask();
     return (
       <div className={`${styles.container}`}>
         <div className="form-group">
-          <label htmlFor="container_name">Container name</label>
+          <label htmlFor="docker-name">Name</label>
           <input
-            id="container_name"
-            name="container_name"
+            id="docker-name"
+            name="name"
             type="text"
-            value={task.container_name}
+            value={task.name}
             onChange={this.handleChange}
             className="form-control"
             placeholder="Docker Container Name"
@@ -123,8 +128,23 @@ export default class DockerServiceCreate extends Component<Props> {
         </div>
         <div className="form-group">
           <label>Ports</label>
-          {task.ports.map(p => (
-            <div key={p}>{p}</div>
+          {task.ports.map(x => (
+            // Display selected ports
+            <div key={x}>
+              <span
+                onClick={() => this.removeMatchingValueFromList('ports', x)}
+                role="presentation"
+                className="icon icon-minus-circled"
+                style={{
+                  cursor: 'pointer',
+                  color: '#fb2f29'
+                }}
+              />
+              <span>
+                &nbsp;
+                {x}
+              </span>
+            </div>
           ))}
           <input
             name="currentport"
@@ -133,7 +153,7 @@ export default class DockerServiceCreate extends Component<Props> {
             onChange={this.handleInputChange}
             style={{
               display: 'block',
-              width: '80%'
+              width: '100px'
             }}
             className="form-control pull-left"
             placeholder="8080:8080"
@@ -141,7 +161,7 @@ export default class DockerServiceCreate extends Component<Props> {
           <button
             onClick={this.handleAddPort}
             type="button"
-            className="btn btn-large btn-default pull-right"
+            className="btn btn-large btn-default pull-left"
           >
             <span className="icon icon-plus" />
             &nbsp;Add
@@ -151,7 +171,22 @@ export default class DockerServiceCreate extends Component<Props> {
         <div className="form-group">
           <label>ENV Variables</label>
           {task.env.map(x => (
-            <div key={x}>{x}</div>
+            // Display selected env variables
+            <div key={x}>
+              <span
+                onClick={() => this.removeMatchingValueFromList('env', x)}
+                role="presentation"
+                className="icon icon-minus-circled"
+                style={{
+                  cursor: 'pointer',
+                  color: '#fb2f29'
+                }}
+              />
+              <span>
+                &nbsp;
+                {x}
+              </span>
+            </div>
           ))}
           <input
             name="currentenv"
@@ -177,8 +212,23 @@ export default class DockerServiceCreate extends Component<Props> {
         </div>
         <div className="form-group">
           <label>Volumes</label>
-          {task.volumes.map(p => (
-            <div key={p}>{p}</div>
+          {task.volumes.map(x => (
+            // Display selected env variables
+            <div key={x}>
+              <span
+                onClick={() => this.removeMatchingValueFromList('volumes', x)}
+                role="presentation"
+                className="icon icon-minus-circled"
+                style={{
+                  cursor: 'pointer',
+                  color: '#fb2f29'
+                }}
+              />
+              <span>
+                &nbsp;
+                {x}
+              </span>
+            </div>
           ))}
           <input
             name="currentvolume"
@@ -201,17 +251,6 @@ export default class DockerServiceCreate extends Component<Props> {
             &nbsp;Add
           </button>
           <div className="clearfix" />
-        </div>
-        <div className="form-actions">
-          {dirty && (
-            <button
-              type="button"
-              onClick={this.handleSaveTask}
-              className="btn btn-mini btn-positive"
-            >
-              Save
-            </button>
-          )}
         </div>
       </div>
     );

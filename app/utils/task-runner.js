@@ -135,6 +135,7 @@ function taskStart(
   debug(`Task running ${cmd} ${args.join(' ')}`);
 
   if (!taskData.process) {
+    console.log('HERE', { cmd, args });
     taskData.process = runCommand(cmd, args, {
       cwd: serviceContext.projectDir
     });
