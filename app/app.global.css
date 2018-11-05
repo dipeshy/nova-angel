@@ -45,3 +45,8 @@ a:hover {
   color: #b02020;
   margin-bottom: 10px;
 }
+
+.btn .icon,
+.btn .icon img {
+  cursor: pointer;
+}

@@ -1,6 +1,5 @@
 // @flow
 import React, { Component } from 'react';
-import styles from './Task.css';
 import { EditorTaskType, TaskType } from '../../../types/task';
 import vscodeLogo from '../../../assets/vscode-icon.png';
 
@@ -20,27 +19,22 @@ export default class EditorTask extends Component<Props> {
   render() {
     const { task } = this.props;
     return (
-      <section className={styles.container} id={task.id}>
-        <img
-          style={{
-            width: '15px',
-            height: '15px'
-          }}
-          src={vscodeLogo}
-          alt="vscode"
-        />
-        <span
-          style={{
-            marginLeft: '7px',
-            fontSize: '1.2em',
-            color: 'green',
-            cursor: 'pointer'
-          }}
-          role="presentation"
-          onClick={this.handleClick}
-          className="icon icon-export"
-        />
-      </section>
+      <button
+        type="button"
+        className="btn btn-mini btn-default"
+        id={task.id}
+        onClick={this.handleClick}
+      >
+        <span className="icon">
+          <img
+            style={{
+              width: '14px'
+            }}
+            src={vscodeLogo}
+            alt="vscode"
+          />
+        </span>
+      </button>
     );
   }
 }
