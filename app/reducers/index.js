@@ -5,13 +5,13 @@ import counter from './counter';
 import services from './services';
 
 export default function createRootReducer(history: {}) {
-  const routerReducer = connectRouter(history)(() => {});
+    const routerReducer = connectRouter(history)(() => {});
 
-  return connectRouter(history)(
-    combineReducers({ 
-      router: routerReducer, 
-      counter, 
-      services 
-    })
-  );
+    return connectRouter(history)(
+        combineReducers({
+            router: routerReducer,
+            counter,
+            services
+        })
+    );
 }

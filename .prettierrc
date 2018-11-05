@@ -5,6 +5,13 @@
       "options": {
         "parser": "json"
       }
+    },
+    {
+      "files": "*.js",
+      "options": {
+        "semi": true,
+        "tabWidth": 4
+      }
     }
   ],
   "singleQuote": true

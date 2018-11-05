@@ -8,32 +8,32 @@ import './app.global.css';
 import persistentStore from './utils/store';
 
 ipcRenderer.on('message', (event, ...messages) => {
-  console.log('main:', ...messages);
+    console.log('main:', ...messages);
 });
 ipcRenderer.on('error', (event, ...messages) => {
-  console.error('main:', ...messages);
+    console.error('main:', ...messages);
 });
 
 const store = configureStore({
-  counter: 0,
-  services: persistentStore.get('services')
+    counter: 0,
+    services: persistentStore.get('services')
 });
 
 render(
-  <AppContainer>
-    <Root store={store} history={history} />
-  </AppContainer>,
-  document.getElementById('root')
+    <AppContainer>
+        <Root store={store} history={history} />
+    </AppContainer>,
+    document.getElementById('root')
 );
 
 if (module.hot) {
-  module.hot.accept('./containers/Root', () => {
-    const NextRoot = require('./containers/Root'); // eslint-disable-line global-require
-    render(
-      <AppContainer>
-        <NextRoot store={store} history={history} />
-      </AppContainer>,
-      document.getElementById('root')
-    );
-  });
+    module.hot.accept('./containers/Root', () => {
+        const NextRoot = require('./containers/Root'); // eslint-disable-line global-require
+        render(
+            <AppContainer>
+                <NextRoot store={store} history={history} />
+            </AppContainer>,
+            document.getElementById('root')
+        );
+    });
 }

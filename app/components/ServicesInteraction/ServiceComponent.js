@@ -12,66 +12,66 @@ import DockerTask from './Tasks/DockerTask';
 import NpmScriptTask from './Tasks/NpmScriptTask';
 
 type Props = {
-  service: ServiceType
+    service: ServiceType
 };
 
 export default class ServiceComponent extends Component<Props> {
-  props: Props;
+    props: Props;
 
-  groupByTasks = groupBy(task => task.type);
+    groupByTasks = groupBy(task => task.type);
 
-  invokeTask = (taskName: string, task: TaskType) => {
-    const { service } = this.props;
-    console.log(`Running task`, { taskName, task, service });
-    ipcRenderer.send('Task', service, taskName, task);
-  };
+    invokeTask = (taskName: string, task: TaskType) => {
+        const { service } = this.props;
+        console.log(`Running task`, { taskName, task, service });
+        ipcRenderer.send('Task', service, taskName, task);
+    };
 
-  render() {
-    const { service } = this.props;
-    const { tasks } = service;
-    const groupedTasks = this.groupByTasks(tasks);
-    const editorTask = groupedTasks.editor ? groupedTasks.editor[0] : null;
-    const npmscript = groupedTasks.npmscript || [];
-    const docker = groupedTasks.docker || [];
+    render() {
+        const { service } = this.props;
+        const { tasks } = service;
+        const groupedTasks = this.groupByTasks(tasks);
+        const editorTask = groupedTasks.editor ? groupedTasks.editor[0] : null;
+        const npmscript = groupedTasks.npmscript || [];
+        const docker = groupedTasks.docker || [];
 
-    return (
-      <section className={`${styles.container}`} data-tid="container">
-        <header className="title">
-          <h1>{service.name}</h1>
-          <div className="btn-group pull-right">
-            {editorTask !== null && (
-              <EditorTask
-                key={editorTask.id}
-                task={editorTask}
-                invokeTask={this.invokeTask}
-              />
-            )}
-            <Link
-              to={`${routes.SERVICES}/${service.id}`}
-              className="btn btn-mini btn-default"
-            >
-              <span className="icon icon-cog" />
-            </Link>
-          </div>
-          <div style={{ clear: 'both' }} />
-        </header>
-        <div>
-          {docker.map(task => (
-            <DockerTask
-              key={task.id}
-              task={task}
-              invokeTask={this.invokeTask}
-            />
-          ))}
-          {npmscript.map(task => (
-            <NpmScriptTask
-              key={task.id}
-              task={task}
-              invokeTask={this.invokeTask}
-            />
-          ))}
-        </div>
-      </section>
-    );
-  }
+        return (
+            <section className={`${styles.container}`} data-tid="container">
+                <header className="title">
+                    <h1>{service.name}</h1>
+                    <div className="btn-group pull-right">
+                        {editorTask !== null && (
+                            <EditorTask
+                                key={editorTask.id}
+                                task={editorTask}
+                                invokeTask={this.invokeTask}
+                            />
+                        )}
+                        <Link
+                            to={`${routes.SERVICES}/${service.id}`}
+                            className="btn btn-mini btn-default"
+                        >
+                            <span className="icon icon-cog" />
+                        </Link>
+                    </div>
+                    <div style={{ clear: 'both' }} />
+                </header>
+                <div>
+                    {docker.map(task => (
+                        <DockerTask
+                            key={task.id}
+                            task={task}
+                            invokeTask={this.invokeTask}
+                        />
+                    ))}
+                    {npmscript.map(task => (
+                        <NpmScriptTask
+                            key={task.id}
+                            task={task}
+                            invokeTask={this.invokeTask}
+                        />
+                    ))}
+                </div>
+            </section>
+        );
+    }
 }

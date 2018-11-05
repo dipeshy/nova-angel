@@ -5,10 +5,10 @@ import ServiceCreate from '../components/Services/ServiceCreate';
 import * as ServiceActions from '../actions/service';
 
 function mapDispatchToProps(dispatch) {
-  return bindActionCreators(ServiceActions, dispatch);
+    return bindActionCreators(ServiceActions, dispatch);
 }
 
 export default connect(
-  null,
-  mapDispatchToProps
+    null,
+    mapDispatchToProps
 )(ServiceCreate);
