@@ -1,6 +1,6 @@
 // @flow
 import React, { Component } from 'react';
-import { groupBy } from 'rambda';
+import { groupBy } from 'ramda';
 import styles from './ServiceDetails.css';
 import { ServiceType } from '../../types/service';
 import { TaskType } from '../../types/task';

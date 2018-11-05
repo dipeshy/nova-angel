@@ -1,7 +1,7 @@
 // @flow
 import { v4 } from 'uuid';
 import React, { Component } from 'react';
-import { groupBy } from 'rambda';
+import { groupBy } from 'ramda';
 import styles from './ServiceCreate.css';
 import { ServiceType } from '../../types/service';
 import { EditorTaskType } from '../../types/task';

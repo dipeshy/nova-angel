@@ -2,7 +2,7 @@
 import { ipcRenderer } from 'electron';
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
-import { groupBy } from 'rambda';
+import { groupBy } from 'ramda';
 import routes from '../../constants/routes';
 import { ServiceType } from '../../types/service';
 import { TaskType } from '../../types/task';
@@ -30,7 +30,7 @@ export default class ServiceComponent extends Component<Props> {
     const { service } = this.props;
     const { tasks } = service;
     const groupedTasks = this.groupByTasks(tasks);
-    const editor = groupedTasks.editor || [];
+    const editorTask = groupedTasks.editor ? groupedTasks.editor[0] : null;
     const npmscript = groupedTasks.npmscript || [];
     const docker = groupedTasks.docker || [];
 
@@ -39,26 +39,23 @@ export default class ServiceComponent extends Component<Props> {
         <header className="title">
           <h1>{service.name}</h1>
           <div className="btn-group pull-right">
+            {editorTask !== null && (
+              <EditorTask
+                key={editorTask.id}
+                task={editorTask}
+                invokeTask={this.invokeTask}
+              />
+            )}
             <Link
               to={`${routes.SERVICES}/${service.id}`}
               className="btn btn-mini btn-default"
             >
               <span className="icon icon-cog" />
             </Link>
-            <button type="button" className="btn btn-mini btn-default">
-              <span className="icon icon-bookmark" />
-            </button>
           </div>
           <div style={{ clear: 'both' }} />
         </header>
         <div>
-          {editor.map(task => (
-            <EditorTask
-              key={task.id}
-              task={task}
-              invokeTask={this.invokeTask}
-            />
-          ))}
           {docker.map(task => (
             <DockerTask
               key={task.id}
