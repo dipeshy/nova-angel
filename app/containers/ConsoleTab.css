@@ -1,0 +1,21 @@
+.container {
+  background: #ddd;
+  width: 100vw;
+}
+.logs {
+  font-family: monaco, sans-serif;
+  background: #333;
+  color: #eee;
+  text-align: left;
+  font-size: 0.8em;
+}
+.logs pre {
+  font-family: monaco, sans-serif;
+  font-size: 0.85em;
+  margin: 0;
+  padding: 0;
+}
+
+.logs a {
+  color: #00c000;
+}

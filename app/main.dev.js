@@ -29,16 +29,13 @@ process.env.PATH = [process.env.PATH, '/usr/local/bin', '~/.yarn/bin'].join(
 let mainWindow = null;
 const taskRunner = createTaskRunner(
     process.env.CWD,
-    (...args) => {
-        mainWindow.webContents.send(
-            'message',
-            {
-                PATH: process.env.PATH,
-                SHELL: process.env.SHELL
-            },
-            ...args
-        );
-        console.log(...args);
+    (eventName, ...args) => {
+        if (mainWindow) {
+            mainWindow.webContents.send(
+                eventName,
+                ...args
+            );
+        }
     },
     `file://${__dirname}/console.html`
 );

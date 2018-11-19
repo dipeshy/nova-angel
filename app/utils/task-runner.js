@@ -20,15 +20,18 @@ import { ServiceType } from '../types/service';
 import { deleteDir, cleanAndCreateDir, createWindowWithHtml } from './utils';
 
 let LOGS_PATH: string;
-let debug;
+let sendEvent;
 
+const debug = (...args) => {
+    sendEvent('message', ...args);
+};
 const NPMSCRIPT_BIN = 'yarn';
 const CODE_BIN = 'code';
 const DOCKER_BIN = 'docker';
 
-export default function createTaskRunner(cwd, logger, consoleHtml) {
+export default function createTaskRunner(cwd, _sendEvent, consoleHtml) {
     LOGS_PATH = resolve(cwd, 'logs');
-    debug = logger;
+    sendEvent = _sendEvent;
     cleanAndCreateDir(LOGS_PATH);
 
     return function taskRunner(
@@ -177,6 +180,7 @@ function handleTaskExit(task) {
         deleteDir(taskData.logFile);
     }
 
+    sendEvent("consolewindow:log", 'You can close the window. Auto closing in 5 sec');
     if (taskData.consoleWindow) {
         taskData.consoleWindow.focus();
         taskData.consoleWindow.webContents.send(
@@ -202,25 +206,33 @@ function createOpenConsole(task: TaskType, consoleHtml: string) {
     // ==============================
     // Create consoleWindow if closed
     // ==============================
-    const consoleWindow = createWindowWithHtml(
-        `Console: ${task.name}`,
-        consoleHtml
-    );
-    consoleWindow.once('ready-to-show', () => {
-        consoleWindow.show();
-        // load previous logs
-        const previousLogs = readFileSync(taskData.logFile, {
-            encoding: 'utf8'
-        });
-        consoleWindow.webContents.send('console:log', previousLogs);
+    // const consoleWindow = createWindowWithHtml(
+    //     `Console: ${task.name}`,
+    //     consoleHtml
+    // );
 
-        // Set consoleWindow instance in main task list
-        taskData.consoleWindow = consoleWindow;
+    // load previous logs
+    const previousLogs = readFileSync(taskData.logFile, {
+        encoding: 'utf8'
     });
+    sendEvent("consolewindow:log", previousLogs);
+
+    // consoleWindow.once('ready-to-show', () => {
+    //     consoleWindow.show();
+    //     // load previous logs
+    //     const previousLogs = readFileSync(taskData.logFile, {
+    //         encoding: 'utf8'
+    //     });
+    //     sendEvent("consolewindow:log", previousLogs);
+    //     // consoleWindow.webContents.send('console:log', previousLogs);
+
+    //     // Set consoleWindow instance in main task list
+    //     taskData.consoleWindow = consoleWindow;
+    // });
     // Emitted when the window is closed.
-    consoleWindow.on('closed', () => {
-        taskData.consoleWindow = null;
-    });
+    // consoleWindow.on('closed', () => {
+    //     taskData.consoleWindow = null;
+    // });
 }
 
 function attachConsoleLogView(process, taskId: string) {
@@ -247,6 +259,7 @@ function createOutputWriter(taskId) {
             global.runningTasks[taskId] || {});
         if (taskData.logstream) {
             taskData.logstream.write(data);
+            sendEvent("consolewindow:log", data.toString().trim()) ;
         }
 
         if (taskData.consoleWindow) {

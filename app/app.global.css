@@ -50,3 +50,12 @@ a:hover {
 .btn .icon img {
   cursor: pointer;
 }
+
+.ansi-white { color: #eee; }
+.ansi-red { color: #b00020; }
+.ansi-green { color: #00c000; }
+.ansi-yellow { color: yellow; }
+.ansi-blue { color: rgb(50, 50, 238); }
+.ansi-cyan { color: #00d0d0; }
+.ansi-bold { font-weight: bold; }
+.ansi-reset { color: #eee; background-color: rgb(30, 30, 30); }

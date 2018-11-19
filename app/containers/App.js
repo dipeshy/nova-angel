@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 import routes from '../constants/routes';
+import ConsoleTabs from './ConsoleTabs';
 
 type Props = {
     children: React.Node
@@ -35,6 +36,9 @@ export default class App extends React.Component<Props> {
                         </div>
                     </header>
                     <div className="window-content">{children}</div>
+                    <div className="window-content">
+                        <ConsoleTabs />
+                    </div>
                     <footer className="toolbar toolbar-footer">
                         <h1 className="title">2018</h1>
                     </footer>
