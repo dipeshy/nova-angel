@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { createWriteStream, readFileSync } from 'fs';
+import { createWriteStream } from 'fs';
 import runCommand from './commands';
 import {
     EDITOR_OPEN,
@@ -17,7 +17,7 @@ import {
     DockerTaskType
 } from '../types/task';
 import { ServiceType } from '../types/service';
-import { deleteDir, cleanAndCreateDir, createWindowWithHtml } from './utils';
+import { deleteDir, cleanAndCreateDir } from './utils';
 
 let LOGS_PATH: string;
 let sendEvent;
@@ -29,7 +29,7 @@ const NPMSCRIPT_BIN = 'yarn';
 const CODE_BIN = 'code';
 const DOCKER_BIN = 'docker';
 
-export default function createTaskRunner(cwd, _sendEvent, consoleHtml) {
+export default function createTaskRunner(cwd, _sendEvent) {
     LOGS_PATH = resolve(cwd, 'logs');
     sendEvent = _sendEvent;
     cleanAndCreateDir(LOGS_PATH);
@@ -55,13 +55,11 @@ export default function createTaskRunner(cwd, _sendEvent, consoleHtml) {
                     task,
                     parseNpmCommand(serviceContext, task)
                 );
-                createOpenConsole(task, consoleHtml);
                 break;
             case NPMSCRIPT_STOP:
                 taskStop(serviceContext, task);
                 break;
             case NPMSCRIPT_VIEWLOG:
-                createOpenConsole(task, consoleHtml);
                 break;
             case DOCKER_START:
                 taskStart(
@@ -69,13 +67,11 @@ export default function createTaskRunner(cwd, _sendEvent, consoleHtml) {
                     task,
                     parseDockerCommand(serviceContext, task)
                 );
-                createOpenConsole(task, consoleHtml);
                 break;
             case DOCKER_STOP:
                 taskStop(serviceContext, task);
                 break;
             case DOCKER_VIEWLOG:
-                createOpenConsole(task, consoleHtml);
                 break;
             default:
                 debug('Unknown task', { taskName, task });
@@ -130,7 +126,14 @@ function parseDockerCommand(serviceContext: ServiceType, task: DockerTaskType) {
         args
     };
 }
-// Mutates taskData
+
+/**
+ * Mutates taskData
+ *
+ * @param {*} serviceContext
+ * @param {*} task
+ * @param {*} cmdDescription
+ */
 function taskStart(
     serviceContext: ServiceType,
     task: TaskType,
@@ -158,7 +161,9 @@ function taskStart(
             taskData.process = null;
         });
 
-        // Mutates taskData
+        // Enable console for app by default
+        taskData.consoleAppEnabled = true;
+        taskData.consoleAppNS = serviceContext.name;
         attachConsoleLogView(taskData.process, task.id);
     }
 }
@@ -180,59 +185,12 @@ function handleTaskExit(task) {
         deleteDir(taskData.logFile);
     }
 
-    sendEvent("consolewindow:log", 'You can close the window. Auto closing in 5 sec');
-    if (taskData.consoleWindow) {
-        taskData.consoleWindow.focus();
-        taskData.consoleWindow.webContents.send(
-            'console:log',
-            'You can close the window. Auto closing in 5 sec'
-        );
-        setTimeout(() => {
-            if (taskData.consoleWindow) {
-                taskData.consoleWindow.close();
-            }
-        }, 5000);
-    }
-}
-
-function createOpenConsole(task: TaskType, consoleHtml: string) {
-    const taskData = (global.runningTasks[task.id] =
-        global.runningTasks[task.id] || {});
-
-    if (taskData.consoleWindow) {
-        taskData.consoleWindow.focus();
-        return;
-    }
-    // ==============================
-    // Create consoleWindow if closed
-    // ==============================
-    // const consoleWindow = createWindowWithHtml(
-    //     `Console: ${task.name}`,
-    //     consoleHtml
-    // );
-
-    // load previous logs
-    const previousLogs = readFileSync(taskData.logFile, {
-        encoding: 'utf8'
-    });
-    sendEvent("consolewindow:log", previousLogs);
-
-    // consoleWindow.once('ready-to-show', () => {
-    //     consoleWindow.show();
-    //     // load previous logs
-    //     const previousLogs = readFileSync(taskData.logFile, {
-    //         encoding: 'utf8'
-    //     });
-    //     sendEvent("consolewindow:log", previousLogs);
-    //     // consoleWindow.webContents.send('console:log', previousLogs);
-
-    //     // Set consoleWindow instance in main task list
-    //     taskData.consoleWindow = consoleWindow;
-    // });
-    // Emitted when the window is closed.
-    // consoleWindow.on('closed', () => {
-    //     taskData.consoleWindow = null;
-    // });
+    sendEvent(
+        'consolewindow:log',
+        task.id,
+        taskData.consoleAppNS,
+        'Closing...'
+    );
 }
 
 function attachConsoleLogView(process, taskId: string) {
@@ -257,14 +215,19 @@ function createOutputWriter(taskId) {
     return data => {
         const taskData = (global.runningTasks[taskId] =
             global.runningTasks[taskId] || {});
+
+        // Write to log file for preserving log
         if (taskData.logstream) {
             taskData.logstream.write(data);
-            sendEvent("consolewindow:log", data.toString().trim()) ;
         }
-
-        if (taskData.consoleWindow) {
-            const response = data.toString().trim();
-            taskData.consoleWindow.webContents.send('console:log', response);
+        // Send output to app via event if enabled
+        if (taskData.consoleAppEnabled) {
+            sendEvent(
+                'consolewindow:log',
+                taskId,
+                taskData.consoleAppNS,
+                data.toString().trim()
+            );
         }
     };
 }

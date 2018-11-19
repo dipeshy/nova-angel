@@ -10,11 +10,14 @@ import { ADD_LOG } from './actions/pconsole';
 
 const store = configureStore({
     counter: 0,
-    consoles: [{
-        id: "hello", 
-        name: "hello", 
-        logs: []
-    }],
+    consoles: [
+        {
+            id: 'main-console',
+            name: 'Main Console',
+            logs: [],
+            nsColours: {}
+        }
+    ],
     services: persistentStore.get('services')
 });
 
@@ -27,16 +30,14 @@ ipcRenderer.on('error', (event, ...messages) => {
 ipcRenderer.on('tasks-snapshot', (_, runningtasks) => {
     console.log('tasks-snapshot:', runningtasks);
 });
-ipcRenderer.on('consolewindow:log', (_, log, ...args) => {
-    console.log('consolewindow:log:', log, ...args);
+ipcRenderer.on('consolewindow:log', (_, taskId, ns, log) => {
     store.dispatch({
         type: ADD_LOG,
-        id: "hello",
+        id: 'main-console', // Add log to main console.
+        ns,
         log
-    })
+    });
 });
-
-
 
 window.temp = store;
 
