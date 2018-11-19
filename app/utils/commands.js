@@ -21,10 +21,12 @@ export default function runCommand(command, args, options) {
     child.on('disconnect', () => console.log(child.pid, 'process disconnect'));
     child.on('exit', (code, signal) =>
         console.log(
-            child.pid,
-            code,
-            signal,
-            `process exit with code: ${code}, signal: ${signal}`
+            'Process exiting',
+            JSON.stringify({
+                pid: child.pid,
+                code,
+                signal
+            })
         )
     );
     child.on('error', err => {
