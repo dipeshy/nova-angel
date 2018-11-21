@@ -34,11 +34,11 @@ export default function createTaskRunner(cwd, _sendEvent) {
     sendEvent = _sendEvent;
     cleanAndCreateDir(LOGS_PATH);
 
-    return function taskRunner(
-        serviceContext: ServiceType,
-        taskName,
-        task: TaskType
-    ) {
+    return {
+        taskRunner,
+        stopAllTasks
+    };
+    function taskRunner(serviceContext: ServiceType, taskName, task: TaskType) {
         debug(
             `Running Task: ${taskName} (${serviceContext.name}: ${
                 serviceContext.id
@@ -76,15 +76,33 @@ export default function createTaskRunner(cwd, _sendEvent) {
             default:
                 debug('Unknown task', { taskName, task });
         }
-    };
+    }
+
+    function stopAllTasks(cb) {
+        console.log('Stopping all tasks');
+        Object.keys(global.runningTasks).forEach(taskId => {
+            const { taskProcess } = global.runningTasks[taskId];
+            if (taskProcess) {
+                console.log(`KILL SIGTERM process group ${-process.pid}`);
+                process.kill(taskProcess.pid, 'SIGTERM');
+            }
+        });
+        if (cb) cb();
+    }
 }
 
 function openEditor(serviceContext: ServiceType, task: EditorTaskType) {
-    const process = runCommand(CODE_BIN, [task.projectDir]);
-    process.on('close', () =>
+    const taskProcess = runCommand(CODE_BIN, [task.projectDir], {
+        env: {
+            PATH: process.env.PATH
+        }
+    });
+    taskProcess.on('close', () =>
         debug(`openEditor closed: ${serviceContext.name}`)
     );
-    process.on('exit', () => debug(`openEditor exit: ${serviceContext.name}`));
+    taskProcess.on('exit', () =>
+        debug(`openEditor exit: ${serviceContext.name}`)
+    );
 }
 
 function parseNpmCommand(serviceContext: ServiceType, task: NpmTaskType) {
@@ -147,7 +165,10 @@ function taskStart(
     if (!taskData.taskProcess) {
         taskData.taskProcess = runCommand(cmd, args, {
             cwd: serviceContext.projectDir,
-            detached: true
+            detached: true,
+            env: {
+                PATH: process.env.PATH
+            }
         });
         taskData.taskProcess.unref();
 

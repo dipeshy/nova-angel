@@ -27,7 +27,7 @@ process.env.PATH = [process.env.PATH, '/usr/local/bin', '~/.yarn/bin'].join(
 );
 
 let mainWindow = null;
-const taskRunner = createTaskRunner(
+const { stopAllTasks, taskRunner } = createTaskRunner(
     process.env.CWD,
     (eventName, ...args) => {
         if (mainWindow) {
@@ -145,15 +145,3 @@ process.once('SIGUSR2', () => {
         process.kill(process.pid, 'SIGUSR2');
     });
 });
-
-function stopAllTasks(cb) {
-    console.log('Stopping all tasks');
-    Object.keys(global.runningTasks).forEach(taskId => {
-        const { process } = global.runningTasks[taskId];
-        if (process) {
-            console.log(`KILL SIGTERM ${process.pid}`);
-            process.kill('SIGTERM');
-        }
-    });
-    if (cb) cb();
-}
