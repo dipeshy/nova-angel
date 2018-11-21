@@ -107,28 +107,36 @@ function openEditor(serviceContext: ServiceType, task: EditorTaskType) {
 
 function parseNpmCommand(serviceContext: ServiceType, task: NpmTaskType) {
     return parse(
-        task.cmd
-            .replace(/np(m|x)\s+(run)?/g, NPMSCRIPT_BIN)
-            .replace(/nodemon/g, `${NPMSCRIPT_BIN} nodemon`) // special cases
+        task.cmd.replace(/(np(m|x)\s+(run)?|yarn)/g, ''),
+        NPMSCRIPT_BIN
     );
 
-    function parse(cmdString) {
-        const chained = cmdString.split('&&').map(x => parsePipes(x));
+    function parse(cmdString, cmd) {
+        const chained = cmdString.split('&&').map(x => parsePipes(x, cmd));
         return chained.length === 1 ? chained[0] : ['AND', chained];
     }
 
-    function parsePipes(cmdString) {
+    function parsePipes(cmdString, cmd) {
         const piped = cmdString.split('|').map(x => {
-            const [cmd, ...args] = x
+            const args = x
                 .trim()
                 .replace(/\s+/g, '::')
                 .split('::');
+
+            const [maybeCmd, ...restArgs] = args;
+            if (maybeCmd === 'docker') {
+                return {
+                    cmd: maybeCmd,
+                    args: restArgs
+                };
+            }
             return {
                 cmd,
                 args
             };
         });
-        return piped.length === 1 ? piped[0] : ['PIPE', piped];
+        // Not supported. Return first cmd only
+        return piped[0];
     }
 }
 
@@ -201,21 +209,31 @@ function taskStart(
     /* eslint-disable */
     async function runChain(context, cmds) {
         for (let i = 0; i < cmds.length; i += 1) {
-            taskData.taskProcess = runTaskProcess(context, cmds[i]);
-            attachConsoleLogView(taskData.taskProcess, task.id);
-
-            await waitTillclosed(taskData.taskProcess);
-            debug(
-                'Task terminating',
-                JSON.stringify({
-                    pid: taskData.taskProcess.pid
-                })
-            );
-            taskData.taskProcess = null;
-            handleTaskExit(task);
+            const cmd = cmds[i];
+            try {
+                await runAndWait(context, cmd);
+            } catch (err) {
+                console.log('Failed to run command', {
+                    cmd,
+                    err
+                });
+            }
         }
     }
     /* eslint-enable */
+    async function runAndWait(context, cmd) {
+        taskData.taskProcess = runTaskProcess(context, cmd);
+        attachConsoleLogView(taskData.taskProcess, task.id);
+        await waitTillclosed(taskData.taskProcess);
+        debug(
+            'Task terminating',
+            JSON.stringify({
+                pid: taskData.taskProcess.pid
+            })
+        );
+        taskData.taskProcess = null;
+        handleTaskExit(task);
+    }
 }
 
 function waitTillclosed(taskProcess) {
