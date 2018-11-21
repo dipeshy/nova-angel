@@ -2,7 +2,9 @@ const childProcess = require('child_process');
 
 export default function runCommand(command, args, options) {
     const child = childProcess.spawn(command, args, options || {});
-    console.log(`${command}  ${args.join(' ')}`, child.pid);
+    console.log(
+        `runCommand: pid: ${child.pid}, cmd: ${command} ${args.join(' ')}`
+    );
     child.stdout.on('data', data => {
         const response = data.toString().trim();
         if (response) {
@@ -21,7 +23,7 @@ export default function runCommand(command, args, options) {
     child.on('disconnect', () => console.log(child.pid, 'process disconnect'));
     child.on('exit', (code, signal) =>
         console.log(
-            'Process exiting',
+            'runCommand: Process exiting',
             JSON.stringify({
                 pid: child.pid,
                 code,
@@ -30,7 +32,7 @@ export default function runCommand(command, args, options) {
         )
     );
     child.on('error', err => {
-        console.log('Error opening process', err);
+        console.log('runCommand: Error opening process', err);
     });
     return child;
 }
