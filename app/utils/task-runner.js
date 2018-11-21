@@ -144,35 +144,37 @@ function taskStart(
     const { cmd, args } = cmdDescription;
     debug(`Task running ${cmd} ${args.join(' ')}`);
 
-    if (!taskData.process) {
-        taskData.process = runCommand(cmd, args, {
-            cwd: serviceContext.projectDir
+    if (!taskData.taskProcess) {
+        taskData.taskProcess = runCommand(cmd, args, {
+            cwd: serviceContext.projectDir,
+            detached: true
         });
+        taskData.taskProcess.unref();
 
-        taskData.process.on('close', () => {
+        taskData.taskProcess.on('close', () => {
             debug(
                 'Task terminating',
                 JSON.stringify({
-                    pid: taskData.process.pid,
+                    pid: taskData.taskProcess.pid,
                     task
                 })
             );
             handleTaskExit(task);
-            taskData.process = null;
+            taskData.taskProcess = null;
         });
 
         // Enable console for app by default
         taskData.consoleAppEnabled = true;
         taskData.consoleAppNS = serviceContext.name;
-        attachConsoleLogView(taskData.process, task.id);
+        attachConsoleLogView(taskData.taskProcess, task.id);
     }
 }
 
 function taskStop(serviceContext, task: TaskType) {
-    const { process } = global.runningTasks[task.id];
-    if (process) {
-        console.log(`Sending SIGTERM to process ${process.pid}`);
-        process.kill('SIGTERM');
+    const { taskProcess } = global.runningTasks[task.id];
+    if (taskProcess) {
+        console.log(`Sending SIGTERM to process group ${-taskProcess.pid}`);
+        process.kill(-taskProcess.pid, 'SIGTERM');
     }
 }
 

@@ -31,10 +31,7 @@ const taskRunner = createTaskRunner(
     process.env.CWD,
     (eventName, ...args) => {
         if (mainWindow) {
-            mainWindow.webContents.send(
-                eventName,
-                ...args
-            );
+            mainWindow.webContents.send(eventName, ...args);
         }
     },
     `file://${__dirname}/console.html`
@@ -154,6 +151,7 @@ function stopAllTasks(cb) {
     Object.keys(global.runningTasks).forEach(taskId => {
         const { process } = global.runningTasks[taskId];
         if (process) {
+            console.log(`KILL SIGTERM ${process.pid}`);
             process.kill('SIGTERM');
         }
     });

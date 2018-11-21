@@ -117,7 +117,7 @@ a:hover {
   background-color: #e36242;
 }
 .ansi-hl--7 {
-  background-color: #963651;
+  background-color: #3b9ed8;
 }
 
 .ansi-hl--1::after {
@@ -139,5 +139,5 @@ a:hover {
   border-left-color: #e36242;
 }
 .ansi-hl--7::after {
-  border-left-color: #513940;
+  border-left-color: #3b9ed8;
 }
