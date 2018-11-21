@@ -9,13 +9,20 @@
   text-align: left;
   font-size: 0.8em;
 }
-.logs pre {
+
+.logs > div > pre {
   font-family: monaco, sans-serif;
-  font-size: 0.85em;
   margin: 0;
   padding: 0;
+  white-space: pre-line;
+  overflow-x: auto;
 }
 
 .logs a {
   color: #00c000;
+}
+
+.logs > div {
+  display: flex;
+  align-items: flex-start;
 }

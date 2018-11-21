@@ -9,18 +9,18 @@ export default class ConsoleTab extends Component<Props> {
     }
 
     componentDidUpdate() {
-        const { myConsole } = this.props;
-        const { logs } = myConsole;
-        const lineHeight = '16';
-        this.myRef.current.parentElement.scrollTop = logs.length * lineHeight;
+        const parent = this.myRef.current.parentElement.parentElement;
+        const parentHeight = parent.getBoundingClientRect().height;
+        const contentHeight = this.myRef.current.getBoundingClientRect().height;
+        parent.scrollTop = contentHeight - parentHeight;
     }
 
     render() {
         const { myConsole } = this.props;
         const { logs } = myConsole;
         return (
-            <div ref={this.myRef} className={`${styles.container}`}>
-                <div className={`${styles.logs}`}>
+            <div className={`${styles.container}`}>
+                <div ref={this.myRef} className={`${styles.logs}`}>
                     {logs.map(({ id, log }) => (
                         <div
                             key={id}

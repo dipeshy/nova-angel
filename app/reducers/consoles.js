@@ -39,7 +39,7 @@ export default function consoles(_state = [], action: Action) {
                                 // Add namespace to line
                                 log: `<span class="ansi-hl ${nsColourClass}">${
                                     action.ns
-                                }</span>${line}`
+                                }</span><pre>${line}</pre>`
                             };
                             if (selectIdx) {
                                 logs[selectIdx] = logWrapper;
