@@ -106,7 +106,11 @@ function openEditor(serviceContext: ServiceType, task: EditorTaskType) {
 }
 
 function parseNpmCommand(serviceContext: ServiceType, task: NpmTaskType) {
-    return parse(task.cmd.replace(/np(m|x)\s+(run)?/g, NPMSCRIPT_BIN));
+    return parse(
+        task.cmd
+            .replace(/np(m|x)\s+(run)?/g, NPMSCRIPT_BIN)
+            .replace(/nodemon/g, `${NPMSCRIPT_BIN} nodemon`) // special cases
+    );
 
     function parse(cmdString) {
         const chained = cmdString.split('&&').map(x => parsePipes(x));
@@ -191,14 +195,14 @@ function taskStart(
     }
 
     taskData.consoleAppNS = serviceContext.name;
+    // Enable console for app by default
+    taskData.consoleAppEnabled = true;
 
     /* eslint-disable */
     async function runChain(context, cmds) {
         for (let i = 0; i < cmds.length; i += 1) {
             taskData.taskProcess = runTaskProcess(context, cmds[i]);
             attachConsoleLogView(taskData.taskProcess, task.id);
-            // Enable console for app by default
-            taskData.consoleAppEnabled = true;
 
             await waitTillclosed(taskData.taskProcess);
             debug(
@@ -208,7 +212,6 @@ function taskStart(
                 })
             );
             taskData.taskProcess = null;
-            taskData.consoleAppEnabled = false;
             handleTaskExit(task);
         }
     }
