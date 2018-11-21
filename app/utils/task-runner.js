@@ -1,4 +1,4 @@
-import { resolve } from 'path';
+import { resolve as pathResolve } from 'path';
 import { createWriteStream } from 'fs';
 import runCommand from './commands';
 import {
@@ -30,7 +30,7 @@ const CODE_BIN = 'code';
 const DOCKER_BIN = 'docker';
 
 export default function createTaskRunner(cwd, _sendEvent) {
-    LOGS_PATH = resolve(cwd, 'logs');
+    LOGS_PATH = pathResolve(cwd, 'logs');
     sendEvent = _sendEvent;
     cleanAndCreateDir(LOGS_PATH);
 
@@ -106,10 +106,26 @@ function openEditor(serviceContext: ServiceType, task: EditorTaskType) {
 }
 
 function parseNpmCommand(serviceContext: ServiceType, task: NpmTaskType) {
-    return {
-        cmd: NPMSCRIPT_BIN,
-        args: task.cmd.split(' ')
-    };
+    return parse(task.cmd.replace(/np(m|x)\s+(run)?/g, NPMSCRIPT_BIN));
+
+    function parse(cmdString) {
+        const chained = cmdString.split('&&').map(x => parsePipes(x));
+        return chained.length === 1 ? chained[0] : ['AND', chained];
+    }
+
+    function parsePipes(cmdString) {
+        const piped = cmdString.split('|').map(x => {
+            const [cmd, ...args] = x
+                .trim()
+                .replace(/\s+/g, '::')
+                .split('::');
+            return {
+                cmd,
+                args
+            };
+        });
+        return piped.length === 1 ? piped[0] : ['PIPE', piped];
+    }
 }
 
 function parseDockerCommand(serviceContext: ServiceType, task: DockerTaskType) {
@@ -159,36 +175,67 @@ function taskStart(
 ) {
     const taskData = (global.runningTasks[task.id] =
         global.runningTasks[task.id] || {});
-    const { cmd, args } = cmdDescription;
-    debug(`Task running ${cmd} ${args.join(' ')}`);
+    debug(`Task running ${JSON.stringify(cmdDescription)}`);
 
-    if (!taskData.taskProcess) {
-        taskData.taskProcess = runCommand(cmd, args, {
-            cwd: serviceContext.projectDir,
-            detached: true,
-            env: {
-                PATH: process.env.PATH
-            }
-        });
-        taskData.taskProcess.unref();
+    if (taskData.taskProcess) {
+        return;
+    }
 
-        taskData.taskProcess.on('close', () => {
+    if (Array.isArray(cmdDescription)) {
+        const [operator, cmds] = cmdDescription;
+        if (operator === 'AND') {
+            runChain(serviceContext, cmds);
+        }
+    } else {
+        runChain(serviceContext, [cmdDescription]);
+    }
+
+    taskData.consoleAppNS = serviceContext.name;
+
+    /* eslint-disable */
+    async function runChain(context, cmds) {
+        for (let i = 0; i < cmds.length; i += 1) {
+            taskData.taskProcess = runTaskProcess(context, cmds[i]);
+            attachConsoleLogView(taskData.taskProcess, task.id);
+            // Enable console for app by default
+            taskData.consoleAppEnabled = true;
+
+            await waitTillclosed(taskData.taskProcess);
             debug(
                 'Task terminating',
                 JSON.stringify({
-                    pid: taskData.taskProcess.pid,
-                    task
+                    pid: taskData.taskProcess.pid
                 })
             );
-            handleTaskExit(task);
             taskData.taskProcess = null;
-        });
-
-        // Enable console for app by default
-        taskData.consoleAppEnabled = true;
-        taskData.consoleAppNS = serviceContext.name;
-        attachConsoleLogView(taskData.taskProcess, task.id);
+            taskData.consoleAppEnabled = false;
+            handleTaskExit(task);
+        }
     }
+    /* eslint-enable */
+}
+
+function waitTillclosed(taskProcess) {
+    return new Promise((resolve, reject) => {
+        taskProcess.on('close', () => {
+            resolve('close');
+        });
+        taskProcess.on('error', () => {
+            reject(new Error('error'));
+        });
+    });
+}
+function runTaskProcess(serviceContext, cmdDesc) {
+    const { cmd, args } = cmdDesc;
+    const taskProcess = runCommand(cmd, args, {
+        cwd: serviceContext.projectDir,
+        detached: true,
+        env: {
+            PATH: process.env.PATH
+        }
+    });
+    taskProcess.unref();
+    return taskProcess;
 }
 
 function taskStop(serviceContext, task: TaskType) {
@@ -216,13 +263,13 @@ function handleTaskExit(task) {
     );
 }
 
-function attachConsoleLogView(process, taskId: string) {
+function attachConsoleLogView(taskProcess, taskId: string) {
     const taskData = (global.runningTasks[taskId] =
         global.runningTasks[taskId] || {});
 
-    taskData.logFile = resolve(
+    taskData.logFile = pathResolve(
         LOGS_PATH,
-        `${taskId.replace(':', '-')}-${process.pid}`
+        `${taskId.replace(':', '-')}-${taskProcess.pid}`
     );
     taskData.logstream = createWriteStream(taskData.logFile);
     taskData.logstream.on('close', () => {
@@ -230,8 +277,8 @@ function attachConsoleLogView(process, taskId: string) {
     });
 
     const outputWriter = createOutputWriter(taskId);
-    process.stdout.on('data', outputWriter);
-    process.stderr.on('data', outputWriter);
+    taskProcess.stdout.on('data', outputWriter);
+    taskProcess.stderr.on('data', outputWriter);
 }
 
 function createOutputWriter(taskId) {
