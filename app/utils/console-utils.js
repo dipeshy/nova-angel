@@ -1,7 +1,7 @@
 module.exports = {
     decorateAnsiColours,
     parseAnsiCursorCommands,
-    decorateLinks,
+    decorateLinks
 };
 
 /**
@@ -12,9 +12,10 @@ module.exports = {
  * @param {string} data
  */
 function parseAnsiCursorCommands(data) {
-    return data
+    return (
+        data
             // will break to new line
-            .replace(/\n/g, '::')
+            // .replace(/\n/g, '::')
             // eslint-disable-next-line no-control-regex
             .replace(/\u001B\[(\d+)([A-BK])/g, (_, line, command) => {
                 switch (command) {
@@ -29,6 +30,7 @@ function parseAnsiCursorCommands(data) {
                 }
             })
             .split('::')
+    );
 }
 
 function decorateAnsiColours(message) {
