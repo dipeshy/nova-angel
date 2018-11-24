@@ -11,6 +11,7 @@ import { ServiceType } from '../types/service';
 type ServiceFormDataType = {
     id?: string,
     name: string,
+    envvars?: string[],
     projectDir?: string,
     npmscripts?: { [key: string]: boolean },
     dockers?: DockerFormType[]
@@ -60,6 +61,9 @@ export function buildService(
         }
     }
 
+    service.envvars =
+        data.envvars && Array.isArray(data.envvars) ? data.envvars : [];
+
     if (Array.isArray(data.dockers)) {
         data.dockers.forEach((input: DockerFormType) => {
             service.tasks.push(
@@ -76,12 +80,6 @@ export function buildService(
 export function buildServiceFormData(
     service: ServiceType
 ): ServiceFormDataType {
-    //      {
-    //     name: string,
-    //     projectDir?: string,
-    //     npmscripts?: {[key: string]: boolean },
-    //     dockers?: DockerFormType[]
-    // };
     const serviceFormData = {
         id: service.id,
         name: service.name
@@ -91,6 +89,9 @@ export function buildServiceFormData(
         serviceFormData.projectDir = service.projectDir;
     }
 
+    if (service.envvars) {
+        serviceFormData.envvars = service.envvars;
+    }
     service.tasks.forEach((task: TaskType) => {
         let dockerFormData: DockerFormType;
         switch (task.type) {

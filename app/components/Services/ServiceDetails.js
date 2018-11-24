@@ -6,6 +6,7 @@ import styles from './ServiceDetails.css';
 import { ServiceType } from '../../types/service';
 import { buildService } from '../../utils/service.utils';
 import DockerTasks from './DockerTasks';
+import ListFields from '../ListFields';
 
 const { dialog } = require('electron').remote;
 
@@ -132,6 +133,21 @@ class ServiceCreate extends Component<Props> {
                         />
                         <div className="gutter" />
                         <div className="well">
+                            <div className="form-group">
+                                <label className="pull-left">
+                                    ENV Variables
+                                </label>
+                                <FieldArray
+                                    name="envvars"
+                                    component={ListFields}
+                                    props={{
+                                        placeholder: 'NODE_ENV=production'
+                                    }}
+                                />
+                            </div>
+                        </div>
+                        <div className="gutter" />
+                        <div className="well">
                             <strong>Npm Scripts</strong>
                             {npmscripts &&
                                 Object.keys(npmscripts).map(key => (
@@ -187,6 +203,7 @@ class ServiceCreate extends Component<Props> {
                             )}
                         </div>
                     </form>
+                    <div className="gutter" />
                 </div>
             </div>
         );

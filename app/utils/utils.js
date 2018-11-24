@@ -67,3 +67,17 @@ export function createWindowWithHtml(title, html) {
 export function getClassname(...args) {
     return args.join(' ');
 }
+
+export function parseEnvvarList(list: string[]): { [key: string]: string } {
+    const envvars = {};
+    list.forEach((envvarstr: string) => {
+        const [key, value] = envvarstr.split('=');
+        if (!(key && value)) {
+            console.error(`Invalid envvar ${envvarstr}`);
+            return;
+        }
+
+        envvars[key] = value;
+    });
+    return envvars;
+}

@@ -17,7 +17,7 @@ import {
     DockerTaskType
 } from '../types/task';
 import { ServiceType } from '../types/service';
-import { deleteDir, cleanAndCreateDir } from './utils';
+import { deleteDir, cleanAndCreateDir, parseEnvvarList } from './utils';
 
 let LOGS_PATH: string;
 let sendEvent;
@@ -207,7 +207,7 @@ function taskStart(
     taskData.consoleAppEnabled = true;
 
     /* eslint-disable */
-    async function runChain(context, cmds) {
+    async function runChain(context: ServiceType, cmds) {
         for (let i = 0; i < cmds.length; i += 1) {
             const cmd = cmds[i];
             try {
@@ -221,7 +221,7 @@ function taskStart(
         }
     }
     /* eslint-enable */
-    async function runAndWait(context, cmd) {
+    async function runAndWait(context: ServiceType, cmd) {
         taskData.taskProcess = runTaskProcess(context, cmd);
         attachConsoleLogView(taskData.taskProcess, task.id);
         await waitTillclosed(taskData.taskProcess);
@@ -246,20 +246,28 @@ function waitTillclosed(taskProcess) {
         });
     });
 }
-function runTaskProcess(serviceContext, cmdDesc) {
+function runTaskProcess(serviceContext: ServiceType, cmdDesc) {
     const { cmd, args } = cmdDesc;
+    let env = {};
+    if (serviceContext.envvars) {
+        env = {
+            ...env,
+            ...parseEnvvarList(serviceContext.envvars)
+        };
+    }
+    // Add path manually so executables in /bin are available
+    env.PATH = process.env.PATH;
+
     const taskProcess = runCommand(cmd, args, {
         cwd: serviceContext.projectDir,
         detached: true,
-        env: {
-            PATH: process.env.PATH
-        }
+        env
     });
     taskProcess.unref();
     return taskProcess;
 }
 
-function taskStop(serviceContext, task: TaskType) {
+function taskStop(serviceContext: ServiceType, task: TaskType) {
     const { taskProcess } = global.runningTasks[task.id];
     if (taskProcess) {
         console.log(`Sending SIGTERM to process group ${-taskProcess.pid}`);
