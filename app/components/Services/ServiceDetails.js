@@ -5,6 +5,7 @@ import { reduxForm, Field, FieldArray, change } from 'redux-form';
 import styles from './ServiceDetails.css';
 import { ServiceType } from '../../types/service';
 import { buildService } from '../../utils/service.utils';
+import DockerTasks from './DockerTasks';
 
 const { dialog } = require('electron').remote;
 
@@ -31,128 +32,6 @@ const validate = values => {
     console.log('VALIDATE', errors);
     return errors;
 };
-
-const dockerTasks = ({ fields }: { fields: any }) => (
-    <React.Fragment>
-        <span
-            onClick={() => fields.push({})}
-            role="presentation"
-            className="icon icon-plus-circled pull-right"
-            style={{
-                cursor: 'pointer',
-                color: 'green'
-            }}
-        >
-            &nbsp;Add
-        </span>
-        <div className="clearfix" />
-        {fields.map((member, index) => (
-            <li key={member.name}>
-                <span
-                    role="presentation"
-                    className="icon icon-minus-circled pull-right"
-                    style={{
-                        cursor: 'pointer',
-                        color: '#B02222'
-                    }}
-                    onClick={() => fields.remove(index)}
-                >
-                    &nbsp;Remove
-                </span>
-                <div className="clearfix" />
-                <div className="form-group">
-                    <label htmlFor="name">Name</label>
-                    <Field
-                        className="form-control"
-                        name={`${member}.name`}
-                        component="input"
-                        type="text"
-                        placeholder="Docker Container Name"
-                    />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="image">Image</label>
-                    <Field
-                        className="form-control"
-                        name={`${member}.image`}
-                        component="input"
-                        type="text"
-                        placeholder="Docker image"
-                    />
-                </div>
-                <div className="form-group">
-                    <label className="pull-left">Ports</label>
-                    <FieldArray
-                        name={`${member}.ports`}
-                        component={listFields}
-                        props={{ placeholder: '8000:8000' }}
-                    />
-                </div>
-                <div className="form-group">
-                    <label className="pull-left">ENV Variables</label>
-                    <FieldArray
-                        name={`${member}.env`}
-                        component={listFields}
-                        props={{ placeholder: 'NODE_ENV=production' }}
-                    />
-                </div>
-                <div className="form-group">
-                    <label className="pull-left">Volumes</label>
-                    <FieldArray
-                        name={`${member}.volumes`}
-                        component={listFields}
-                        props={{
-                            placeholder:
-                                '~/postgresqldata:/var/lib/postgresql/data'
-                        }}
-                    />
-                </div>
-            </li>
-        ))}
-    </React.Fragment>
-);
-const listFields = ({
-    fields,
-    placeholder
-}: {
-    fields: any,
-    placeholder: string
-}) => (
-    <React.Fragment>
-        <span
-            onClick={() => fields.push()}
-            role="presentation"
-            className="icon icon-plus-circled pull-right"
-            style={{
-                cursor: 'pointer',
-                color: 'green'
-            }}
-        >
-            &nbsp;Add
-        </span>
-        <div className="clearfix" />
-        {fields.map((item, index) => (
-            <div key={item.toString()}>
-                <span
-                    onClick={() => fields.remove(index)}
-                    role="presentation"
-                    className="icon icon-minus-circled"
-                    style={{
-                        cursor: 'pointer',
-                        color: '#fb2f29'
-                    }}
-                />
-                <Field
-                    className="form-control"
-                    name={item}
-                    component="input"
-                    type="text"
-                    placeholder={placeholder}
-                />
-            </div>
-        ))}
-    </React.Fragment>
-);
 
 class ServiceCreate extends Component<Props> {
     props: Props;
@@ -276,7 +155,7 @@ class ServiceCreate extends Component<Props> {
                                 <label className="pull-left">Dockers</label>
                                 <FieldArray
                                     name="dockers"
-                                    component={dockerTasks}
+                                    component={DockerTasks}
                                 />
                             </div>
                         </div>
