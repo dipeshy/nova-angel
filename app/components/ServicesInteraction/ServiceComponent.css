@@ -1,6 +1,6 @@
 .container {
-  width: 240px;
-  min-height: 150px;
+  width: 150px;
+  min-height: 120px;
   background: #eee;
   border-radius: 5px;
   padding: 4px 10px;
@@ -16,8 +16,6 @@
   border-bottom: 1px solid #bbb;
 }
 .container header h1 {
-  width: 160px;
   margin: 0;
   font-size: 1.2em;
-  float: left;
 }

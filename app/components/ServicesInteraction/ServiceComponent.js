@@ -37,7 +37,7 @@ export default class ServiceComponent extends Component<Props> {
         return (
             <section className={`${styles.container}`} data-tid="container">
                 <header className="title">
-                    <h1>{service.name}</h1>
+                    <h1 className="pull-left">{service.name}</h1>
                     <div className="btn-group pull-right">
                         {editorTask !== null && (
                             <EditorTask
