@@ -4,7 +4,8 @@ import Dashboard from '../components/Dashboard';
 
 function mapStateToProps(state) {
     return {
-        services: state.services
+        services: state.services,
+        taskStates: state.taskStates
     };
 }
 

@@ -12,7 +12,8 @@ import { getClassname } from '../../../utils/utils';
 
 type Props = {
     task: NpmTaskType,
-    invokeTask: (taskName: string, task: TaskType) => void
+    invokeTask: (taskName: string, task: TaskType) => void,
+    active: boolean
 };
 
 export default class NpmScriptTask extends Component<Props> {
@@ -34,7 +35,7 @@ export default class NpmScriptTask extends Component<Props> {
     };
 
     render() {
-        const { task } = this.props;
+        const { task, active } = this.props;
         return (
             <section
                 className={getClassname(styles.container, styles.npmscript)}
@@ -49,39 +50,32 @@ export default class NpmScriptTask extends Component<Props> {
                     alt="npm"
                 />
                 <span className={getClassname(styles.name)}> {task.name} </span>
-                <span
-                    style={{
-                        marginLeft: 'auto',
-                        fontSize: '1.2em',
-                        color: 'green',
-                        cursor: 'pointer'
-                    }}
-                    role="presentation"
-                    onClick={this.handleClickStart}
-                    className="icon icon-play"
-                />
-                <span
-                    style={{
-                        marginLeft: '7px',
-                        fontSize: '1.2em',
-                        color: '#B02020',
-                        cursor: 'pointer'
-                    }}
-                    role="presentation"
-                    onClick={this.handleClickStop}
-                    className="icon icon-stop"
-                />
-                <span
-                    style={{
-                        marginLeft: '7px',
-                        fontSize: '1.2em',
-                        color: '#707080',
-                        cursor: 'pointer'
-                    }}
-                    role="presentation"
-                    onClick={this.handleClickViewLog}
-                    className="icon icon-book"
-                />
+                {!active && (
+                    <span
+                        style={{
+                            marginLeft: 'auto',
+                            fontSize: '1.2em',
+                            color: 'green',
+                            cursor: 'pointer'
+                        }}
+                        role="presentation"
+                        onClick={this.handleClickStart}
+                        className="icon icon-play"
+                    />
+                )}
+                {active && (
+                    <span
+                        style={{
+                            marginLeft: 'auto',
+                            fontSize: '1.2em',
+                            color: '#B02020',
+                            cursor: 'pointer'
+                        }}
+                        role="presentation"
+                        onClick={this.handleClickStop}
+                        className="icon icon-stop"
+                    />
+                )}
             </section>
         );
     }

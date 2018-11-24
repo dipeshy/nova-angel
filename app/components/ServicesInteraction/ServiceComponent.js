@@ -12,7 +12,8 @@ import DockerTask from './Tasks/DockerTask';
 import NpmScriptTask from './Tasks/NpmScriptTask';
 
 type Props = {
-    service: ServiceType
+    service: ServiceType,
+    taskStates: { [key: string]: boolean }
 };
 
 export default class ServiceComponent extends Component<Props> {
@@ -22,12 +23,11 @@ export default class ServiceComponent extends Component<Props> {
 
     invokeTask = (taskName: string, task: TaskType) => {
         const { service } = this.props;
-        console.log(`Running task`, { taskName, task, service });
         ipcRenderer.send('Task', service, taskName, task);
     };
 
     render() {
-        const { service } = this.props;
+        const { service, taskStates } = this.props;
         const { tasks } = service;
         const groupedTasks = this.groupByTasks(tasks);
         const editorTask = groupedTasks.editor ? groupedTasks.editor[0] : null;
@@ -61,6 +61,7 @@ export default class ServiceComponent extends Component<Props> {
                             key={task.id}
                             task={task}
                             invokeTask={this.invokeTask}
+                            active={!!taskStates[task.id]}
                         />
                     ))}
                     {npmscript.map(task => (
@@ -68,6 +69,7 @@ export default class ServiceComponent extends Component<Props> {
                             key={task.id}
                             task={task}
                             invokeTask={this.invokeTask}
+                            active={!!taskStates[task.id]}
                         />
                     ))}
                 </div>

@@ -187,11 +187,11 @@ function taskStart(
 ) {
     const taskData = (global.runningTasks[task.id] =
         global.runningTasks[task.id] || {});
-    debug(`Task running ${JSON.stringify(cmdDescription)}`);
-
     if (taskData.taskProcess) {
         return;
     }
+    debug(`Task running ${JSON.stringify(cmdDescription)}`);
+    sendEvent('taskstates', 'start', task);
 
     if (Array.isArray(cmdDescription)) {
         const [operator, cmds] = cmdDescription;
@@ -219,6 +219,8 @@ function taskStart(
                 });
             }
         }
+
+        sendEvent('taskstates', 'stop', task);
     }
     /* eslint-enable */
     async function runAndWait(context: ServiceType, cmd) {

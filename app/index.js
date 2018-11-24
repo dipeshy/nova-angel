@@ -7,6 +7,7 @@ import { configureStore, history } from './store/configureStore';
 import './app.global.css';
 import persistentStore from './utils/store';
 import { ADD_LOG } from './actions/pconsole';
+import { updateTaskstateAction } from './actions/task-state.actions';
 
 const store = configureStore({
     counter: 0,
@@ -37,6 +38,13 @@ ipcRenderer.on('consolewindow:log', (_, taskId, ns, log) => {
         ns,
         log
     });
+});
+
+ipcRenderer.on('taskstates', (_, state, task: TaskType) => {
+    updateTaskstateAction({
+        id: task.id,
+        state
+    })(store.dispatch);
 });
 
 window.temp = store;

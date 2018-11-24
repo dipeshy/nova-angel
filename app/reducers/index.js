@@ -6,6 +6,7 @@ import counter from './counter';
 import services from './services';
 import consoles from './consoles';
 import formData from './form-data.reducer';
+import taskStates from './task-states.reducer';
 
 export default function createRootReducer(history: {}) {
     const routerReducer = connectRouter(history)(() => {});
@@ -17,7 +18,8 @@ export default function createRootReducer(history: {}) {
             services,
             consoles,
             form: formReducer,
-            formData
+            formData,
+            taskStates
         })
     );
 }

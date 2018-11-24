@@ -6,14 +6,15 @@ import ServiceComponent from './ServicesInteraction/ServiceComponent';
 import ConsoleTabs from '../containers/ConsoleTabs';
 
 type Props = {
-    services: Array<ServiceType>
+    services: Array<ServiceType>,
+    taskStates: { [key: string]: boolean }
 };
 
 export default class Dashboard extends Component<Props> {
     props: Props;
 
     render() {
-        const { services } = this.props;
+        const { services, taskStates } = this.props;
         return (
             <React.Fragment>
                 <div className="window-content">
@@ -23,6 +24,7 @@ export default class Dashboard extends Component<Props> {
                                 <ServiceComponent
                                     key={service.id}
                                     service={service}
+                                    taskStates={taskStates}
                                 />
                             ))}
                         </div>
