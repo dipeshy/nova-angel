@@ -25,3 +25,69 @@ export type DockerTaskType = {
     args: { [key: string]: string },
     env: Array<string>
 };
+
+export type CreateEditorTaskInputType = {
+    parentId: string,
+    projectDir: string
+};
+export function createEditorTask({
+    parentId,
+    projectDir
+}: CreateEditorTaskInputType): EditorTaskType {
+    const editorTask: EditorTaskType = {
+        id: `${parentId}:editor`,
+        name: 'vscode',
+        projectDir,
+        type: 'editor'
+    };
+    return editorTask;
+}
+
+export type CreateNpmTaskInputType = {
+    parentId: string,
+    name: string,
+    cmd: string
+};
+export function createNpmTask({
+    parentId,
+    name,
+    cmd
+}: CreateNpmTaskInputType): NpmTaskType {
+    return {
+        id: `${parentId}:npmscript:${name}`,
+        name,
+        cmd,
+        type: 'npmscript'
+    };
+}
+
+export type CreateDockerTaskInputType = {
+    parentId: string,
+    data: DockerFormType
+};
+
+export type DockerFormType = {
+    name: string,
+    image: string,
+    ports?: [],
+    env?: [],
+    volumes?: []
+};
+
+export function createDockerTask({
+    parentId,
+    data
+}: CreateDockerTaskInputType): DockerTaskType {
+    const { name, image, ports = [], env = [], volumes = [] } = data;
+    return {
+        id: `${parentId}:npmscript:${name}`,
+        name,
+        container_name: name,
+        type: 'docker',
+        image,
+        ports,
+        env,
+        volumes,
+        args: {}
+    };
+}

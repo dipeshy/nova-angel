@@ -141,3 +141,27 @@ a:hover {
 .ansi-hl--7::after {
   border-left-color: #3b9ed8;
 }
+
+.well {
+  border: 1px solid #ccc;
+  padding: 7px;
+}
+
+.gutter {
+  height: 10px;
+}
+
+.form-group > label {
+  display: block;
+  margin-bottom: 0;
+  font-weight: bold;
+}
+
+.form-group--checkbox > label {
+  display: inline;
+  margin-left: 5px;
+}
+
+button.btn {
+  cursor: pointer;
+}

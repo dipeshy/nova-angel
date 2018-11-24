@@ -1,202 +1,323 @@
 // @flow
 import React, { Component } from 'react';
 import { groupBy } from 'ramda';
+import { reduxForm, Field, FieldArray, change } from 'redux-form';
 import styles from './ServiceDetails.css';
 import { ServiceType } from '../../types/service';
-import { TaskType } from '../../types/task';
-import npmPackageParser from '../../utils/npm-package-parser';
-import createNpmTasks from '../../utils/npmtasks';
-import DockerServiceCreate from './DockerServiceCreate';
+import { buildService } from '../../utils/service.utils';
+
+const { dialog } = require('electron').remote;
 
 type Props = {
-    service: ServiceType,
+    createService: (service: ServiceType) => void,
     updateService: (service: ServiceType) => void,
     deleteService: (id: string) => void,
+    loadFormData: (data: any) => void,
+    dispatch: () => void,
+    handleSubmit: any,
+    submitting: boolean,
     history: {
         push: () => void
-    }
+    },
+    id: string | null,
+    npmscripts: { [key: string]: string }
 };
 
-export default class ServiceDetails extends Component<Props> {
+const validate = values => {
+    const errors = {};
+    if (!values.name) {
+        errors.name = 'Required!';
+    }
+    console.log('VALIDATE', errors);
+    return errors;
+};
+
+const dockerTasks = ({ fields }: { fields: any }) => (
+    <React.Fragment>
+        <span
+            onClick={() => fields.push({})}
+            role="presentation"
+            className="icon icon-plus-circled pull-right"
+            style={{
+                cursor: 'pointer',
+                color: 'green'
+            }}
+        >
+            &nbsp;Add
+        </span>
+        <div className="clearfix" />
+        {fields.map((member, index) => (
+            <li key={member.name}>
+                <span
+                    role="presentation"
+                    className="icon icon-minus-circled pull-right"
+                    style={{
+                        cursor: 'pointer',
+                        color: '#B02222'
+                    }}
+                    onClick={() => fields.remove(index)}
+                >
+                    &nbsp;Remove
+                </span>
+                <div className="clearfix" />
+                <div className="form-group">
+                    <label htmlFor="name">Name</label>
+                    <Field
+                        className="form-control"
+                        name={`${member}.name`}
+                        component="input"
+                        type="text"
+                        placeholder="Docker Container Name"
+                    />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="image">Image</label>
+                    <Field
+                        className="form-control"
+                        name={`${member}.image`}
+                        component="input"
+                        type="text"
+                        placeholder="Docker image"
+                    />
+                </div>
+                <div className="form-group">
+                    <label className="pull-left">Ports</label>
+                    <FieldArray
+                        name={`${member}.ports`}
+                        component={listFields}
+                        props={{ placeholder: '8000:8000' }}
+                    />
+                </div>
+                <div className="form-group">
+                    <label className="pull-left">ENV Variables</label>
+                    <FieldArray
+                        name={`${member}.env`}
+                        component={listFields}
+                        props={{ placeholder: 'NODE_ENV=production' }}
+                    />
+                </div>
+                <div className="form-group">
+                    <label className="pull-left">Volumes</label>
+                    <FieldArray
+                        name={`${member}.volumes`}
+                        component={listFields}
+                        props={{
+                            placeholder:
+                                '~/postgresqldata:/var/lib/postgresql/data'
+                        }}
+                    />
+                </div>
+            </li>
+        ))}
+    </React.Fragment>
+);
+const listFields = ({
+    fields,
+    placeholder
+}: {
+    fields: any,
+    placeholder: string
+}) => (
+    <React.Fragment>
+        <span
+            onClick={() => fields.push()}
+            role="presentation"
+            className="icon icon-plus-circled pull-right"
+            style={{
+                cursor: 'pointer',
+                color: 'green'
+            }}
+        >
+            &nbsp;Add
+        </span>
+        <div className="clearfix" />
+        {fields.map((item, index) => (
+            <div key={item.toString()}>
+                <span
+                    onClick={() => fields.remove(index)}
+                    role="presentation"
+                    className="icon icon-minus-circled"
+                    style={{
+                        cursor: 'pointer',
+                        color: '#fb2f29'
+                    }}
+                />
+                <Field
+                    className="form-control"
+                    name={item}
+                    component="input"
+                    type="text"
+                    placeholder={placeholder}
+                />
+            </div>
+        ))}
+    </React.Fragment>
+);
+
+class ServiceCreate extends Component<Props> {
     props: Props;
 
     constructor(props) {
         super(props);
-        const { service } = props;
-        const state = {
-            service
-        };
-
-        if (service.projectDir) {
-            const manifest = npmPackageParser(service.projectDir);
-            const { npmscripts } = manifest;
-            state.npmtasks = createNpmTasks(service.id, npmscripts);
-        } else {
-            state.npmtasks = [];
-        }
-
-        this.state = state;
+        this.dialog = dialog;
     }
 
     groupByTasks = groupBy(task => task.type);
 
-    handleChange = event => {
-        const { service } = this.state;
-        service.name = event.target.value;
-        this.setState({
-            service
+    handleSubmit = data => {
+        const { props } = this;
+        const {
+            npmscripts,
+            createService,
+            updateService,
+            history
+        } = this.props;
+
+        const service: ServiceType = buildService(data, {
+            npmscripts
         });
-    };
 
-    selectNpmScript = event => {
-        const selectedId = event.target.value;
-        const { npmtasks } = this.state;
-        const task = npmtasks.find(t => t.id === selectedId);
-
-        if (event.target.checked) {
-            this.addTask(task);
+        if (props.id) {
+            updateService(service);
         } else {
-            this.removeTask(task.id);
+            createService(service);
         }
-    };
-
-    addTask = task => {
-        console.log('Adding task', { task });
-        this.setState(prevState => {
-            const state = { ...prevState };
-            state.service.tasks.push(task);
-            return state;
-        });
-    };
-
-    saveTask = task => {
-        const { service } = this.state;
-        const found = service.tasks.find(x => x.id === task.id);
-
-        if (found) {
-            this.updateTask(task);
-        } else {
-            this.addTask(task);
-        }
-    };
-
-    updateTask = targetTask => {
-        console.log('Updating task', { targetTask });
-        this.setState(prevState => {
-            const state = { ...prevState };
-            const tasks = prevState.service.tasks.map(
-                task => (targetTask.id === task.id ? task : targetTask)
-            );
-            state.service.tasks = tasks;
-            return state;
-        });
-    };
-
-    removeTask = id => {
-        console.log('Removing task', { id });
-
-        this.setState(prevState => {
-            const state = { ...prevState };
-            const tasks = prevState.service.tasks.filter(
-                task => id !== task.id
-            );
-            state.service.tasks = tasks;
-            return state;
-        });
-    };
-
-    handleSubmit = event => {
-        event.preventDefault();
-        const { updateService, history } = this.props;
-        const { service } = this.state;
-
-        console.log('Updating service', service);
-        updateService(service);
         history.push('/');
     };
 
     handleDelete = () => {
-        const { deleteService, history } = this.props;
-        const { service } = this.state;
-        deleteService(service.id);
+        const { deleteService, id } = this.props;
+        if (id) {
+            deleteService(id);
+        }
+        this.redirectHome();
+    };
 
+    redirectHome = () => {
+        const { history } = this.props;
         history.push('/');
     };
 
-    render() {
-        const { service, npmtasks } = this.state;
-        const name = service.name || '';
-        const tasks = service.tasks || [];
-        const groupedTasks = this.groupByTasks(tasks);
-        const docker = groupedTasks.docker || [];
+    setProjectDirWithDialog = () => {
+        const selectedDirs = this.dialog.showOpenDialog({
+            properties: ['openDirectory']
+        });
 
+        if (!(selectedDirs && selectedDirs.length)) {
+            return;
+        }
+
+        const projectDir = selectedDirs[0];
+        const { loadFormData, dispatch } = this.props;
+        dispatch(change('service', 'npmscripts', {}));
+        loadFormData({
+            projectDir
+        });
+    };
+
+    render() {
+        const { handleSubmit, submitting, npmscripts, id } = this.props;
         return (
-            <div className={`${styles.container}`} data-tid="container">
-                <form onSubmit={this.handleSubmit}>
-                    <div className="form-group">
-                        <strong>Node Project:&nbsp;</strong>
-                        <span>{service.projectDir}</span>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="name">Service Name</label>
-                        <input
-                            type="text"
-                            id="name"
-                            value={name}
-                            onChange={this.handleChange}
+            <div className="window-content">
+                <div className={`${styles.container}`}>
+                    <form
+                        onSubmit={handleSubmit(data => this.handleSubmit(data))}
+                    >
+                        <Field name="id" component="input" type="hidden" />
+                        <div className="form-group">
+                            <label htmlFor="name">Service name</label>
+                            <Field
+                                className="form-control"
+                                name="name"
+                                component="input"
+                                type="text"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <button
+                                className="btn btn-default"
+                                type="button"
+                                onClick={this.setProjectDirWithDialog}
+                            >
+                                Project Path
+                            </button>
+                        </div>
+                        <Field
+                            style={{ width: '100%' }}
                             className="form-control"
-                            placeholder="Service name"
+                            disabled
+                            name="projectDir"
+                            component="input"
+                            placeholder="Select project path to add editor and load npm scripts"
+                            type="text"
                         />
-                    </div>
-                    <div className="checkbox">
-                        <span>Select npm script</span>
-                        {npmtasks.map((npmTask: TaskType) => {
-                            const selected = !!tasks.find(
-                                t => t.id === npmTask.id
-                            );
-                            return (
-                                <div key={npmTask.id}>
-                                    <label htmlFor={npmTask.id}>
-                                        <input
-                                            id={npmTask.id}
-                                            value={npmTask.id}
-                                            defaultChecked={selected}
-                                            onChange={this.selectNpmScript}
+                        <div className="gutter" />
+                        <div className="well">
+                            <strong>Npm Scripts</strong>
+                            {npmscripts &&
+                                Object.keys(npmscripts).map(key => (
+                                    <div
+                                        className="form-group--checkbox"
+                                        key={key}
+                                    >
+                                        <Field
+                                            id={key}
+                                            name={`npmscripts.${key}`}
+                                            component="input"
                                             type="checkbox"
                                         />
-                                        &nbsp;
-                                        {npmTask.name}
-                                    </label>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    {docker.map(task => (
-                        <DockerServiceCreate
-                            key={task.id}
-                            service={service}
-                            task={task}
-                            saveTask={this.saveTask}
-                            addTask={this.addTask}
-                        />
-                    ))}
-                    <div className="form-actions">
-                        <button
-                            type="submit"
-                            className="btn btn-form btn-primary"
-                        >
-                            Save
-                        </button>
-                        <button
-                            type="button"
-                            onClick={this.handleDelete}
-                            className="btn btn-form btn-negative"
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </form>
+                                        <label htmlFor={key}>{key}</label>
+                                    </div>
+                                ))}
+                        </div>
+                        <div className="gutter" />
+                        <div className="well">
+                            <div className="form-group">
+                                <label className="pull-left">Dockers</label>
+                                <FieldArray
+                                    name="dockers"
+                                    component={dockerTasks}
+                                />
+                            </div>
+                        </div>
+                        <div className="gutter" />
+                        <div className="form-actions">
+                            <button
+                                type="submit"
+                                className="btn btn-form btn-primary"
+                                disabled={submitting}
+                            >
+                                Save
+                            </button>
+                            <button
+                                type="button"
+                                onClick={this.redirectHome}
+                                className="btn btn-form btn-positive"
+                            >
+                                {' '}
+                                Cancel{' '}
+                            </button>
+                            {id && (
+                                <button
+                                    type="button"
+                                    onClick={this.handleDelete}
+                                    className="btn btn-form btn-negative"
+                                >
+                                    Delete
+                                </button>
+                            )}
+                        </div>
+                    </form>
+                </div>
             </div>
         );
     }
 }
+
+export default reduxForm({
+    form: 'service',
+    validate,
+    enableReinitialize: true,
+    keepDirtyOnReinitialize: true,
+    destroyOnUnmount: true
+})(ServiceCreate);

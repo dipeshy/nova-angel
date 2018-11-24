@@ -3,8 +3,6 @@
   margin: 20px auto 0;
 }
 
-.container label {
-  display: block;
-  margin-bottom: 0;
-  font-weight: bold;
+.container input[type='text'] {
+  width: 300px;
 }
