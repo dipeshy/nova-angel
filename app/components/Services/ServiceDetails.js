@@ -42,6 +42,11 @@ class ServiceCreate extends Component<Props> {
         this.dialog = dialog;
     }
 
+    componentWillUnmount() {
+        const { loadFormData } = this.props;
+        loadFormData({});
+    }
+
     groupByTasks = groupBy(task => task.type);
 
     handleSubmit = data => {
