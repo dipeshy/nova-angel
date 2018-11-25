@@ -48,6 +48,10 @@ export function buildService(
                 const value = data.npmscripts[name];
                 if (value) {
                     const cmd = context.npmscripts[name];
+                    // Script may be removed
+                    if (!cmd) {
+                        return;
+                    }
                     service.tasks.push(
                         createNpmTask({
                             parentId: service.id,
