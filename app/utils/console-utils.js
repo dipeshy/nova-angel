@@ -74,5 +74,5 @@ function decorateAnsiColours(message) {
 }
 
 function decorateLinks(data) {
-    return data.replace(/(http[^\s]+)\s/, '<a href="$1">$1</a>');
+    return data.replace(/(http[^\s\n<]+)/, '<a href="$1">$1</a>');
 }
