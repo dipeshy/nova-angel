@@ -192,13 +192,16 @@ function taskStart(
 ) {
     const taskData = (global.runningTasks[task.id] =
         global.runningTasks[task.id] || {});
+
     if (taskData.taskProcess) {
+        sendEvent('taskstates', 'start', task);
         return;
     }
+
     debug(`Task running ${JSON.stringify(cmdDescription)}`);
-    sendEvent('taskstates', 'start', task);
 
     runChain(serviceContext, cmdDescription);
+    sendEvent('taskstates', 'start', task);
 
     taskData.consoleAppNS = serviceContext.name;
     // Enable console for app by default
