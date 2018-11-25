@@ -1,3 +1,4 @@
+import { ChildProcess } from 'child_process';
 import { resolve as pathResolve } from 'path';
 import { createWriteStream } from 'fs';
 import runCommand from './commands';
@@ -84,7 +85,7 @@ export default function createTaskRunner(cwd, _sendEvent) {
             const { taskProcess } = global.runningTasks[taskId];
             if (taskProcess) {
                 console.log(`KILL SIGTERM process group ${-process.pid}`);
-                process.kill(taskProcess.pid, 'SIGTERM');
+                process.kill(-taskProcess.pid, 'SIGTERM');
             }
         });
         if (cb) cb();
@@ -115,7 +116,7 @@ function parseNpmCommand(serviceContext: ServiceType, task: NpmTaskType) {
 
     function parse(cmdString, cmd) {
         const chained = cmdString.split('&&').map(x => parsePipes(x, cmd));
-        return chained.length === 1 ? chained[0] : ['AND', chained];
+        return ['AND', ...chained];
     }
 
     function parsePipes(cmdString, cmd) {
@@ -137,8 +138,7 @@ function parseNpmCommand(serviceContext: ServiceType, task: NpmTaskType) {
                 args
             };
         });
-        // Not supported. Return first cmd only
-        return piped[0];
+        return piped.length > 1 ? ['PIPE', ...piped] : piped[0];
     }
 }
 
@@ -195,14 +195,7 @@ function taskStart(
     debug(`Task running ${JSON.stringify(cmdDescription)}`);
     sendEvent('taskstates', 'start', task);
 
-    if (Array.isArray(cmdDescription)) {
-        const [operator, cmds] = cmdDescription;
-        if (operator === 'AND') {
-            runChain(serviceContext, cmds);
-        }
-    } else {
-        runChain(serviceContext, [cmdDescription]);
-    }
+    runChain(serviceContext, cmdDescription);
 
     taskData.consoleAppNS = serviceContext.name;
     // Enable console for app by default
@@ -210,8 +203,9 @@ function taskStart(
 
     /* eslint-disable */
     async function runChain(context: ServiceType, cmds) {
-        for (let i = 0; i < cmds.length; i += 1) {
-            const cmd = cmds[i];
+        const [operator, ..._cmds] = cmds;
+        for (let i = 0; i < _cmds.length; i += 1) {
+            const cmd = _cmds[i];
             try {
                 await runAndWait(context, cmd);
             } catch (err) {
@@ -226,9 +220,39 @@ function taskStart(
     }
     /* eslint-enable */
     async function runAndWait(context: ServiceType, cmd) {
-        taskData.taskProcess = runTaskProcess(context, cmd);
-        attachConsoleLogView(taskData.taskProcess, task.id);
-        await waitTillclosed(taskData.taskProcess);
+        // PIPED commands
+        if (Array.isArray(cmd)) {
+            const [operator, ...cmds] = cmd;
+            if (operator !== 'PIPE') {
+                throw new Error(`Unknown operator ${operator}`);
+            }
+            const childs = [];
+            cmds.forEach((_cmd, idx) => {
+                const curPS: ChildProcess = runTaskProcess(context, _cmd);
+                const prevPS: ChildProcess | null =
+                    idx >= 1 ? childs[idx - 1] : null;
+                if (prevPS) {
+                    prevPS.stdout.pipe(curPS.stdin);
+                }
+                childs.push(curPS);
+            });
+            const [main, ...pipeProcesses] = childs;
+            taskData.taskProcess = main;
+            attachConsoleLogView(
+                pipeProcesses[pipeProcesses.length - 1],
+                task.id
+            );
+            await waitTillclosed(main);
+            // End all pipe processes
+            pipeProcesses.forEach((_ps: ChildProcess) => {
+                process.kill(_ps.pid, 'SIGTERM');
+            });
+        } else {
+            taskData.taskProcess = runTaskProcess(context, cmd);
+            attachConsoleLogView(taskData.taskProcess, task.id);
+            await waitTillclosed(taskData.taskProcess);
+        }
+
         debug(
             'Task terminating',
             JSON.stringify({
