@@ -169,10 +169,13 @@ function parseDockerCommand(serviceContext: ServiceType, task: DockerTaskType) {
 
     args.push(task.image);
 
-    return {
-        cmd,
-        args
-    };
+    return [
+        'AND',
+        {
+            cmd,
+            args
+        }
+    ];
 }
 
 /**
