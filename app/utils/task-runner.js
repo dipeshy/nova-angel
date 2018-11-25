@@ -93,8 +93,10 @@ export default function createTaskRunner(cwd, _sendEvent) {
 
 function openEditor(serviceContext: ServiceType, task: EditorTaskType) {
     const taskProcess = runCommand(CODE_BIN, [task.projectDir], {
+        cwd: serviceContext.projectDir,
         env: {
-            PATH: process.env.PATH
+            ...process.env,
+            CWD: serviceContext.projectDir
         }
     });
     taskProcess.on('close', () =>
