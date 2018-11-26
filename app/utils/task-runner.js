@@ -239,6 +239,7 @@ function taskStart(
                     idx >= 1 ? childs[idx - 1] : null;
                 if (prevPS) {
                     prevPS.stdout.pipe(curPS.stdin);
+                    prevPS.stderr.pipe(curPS.stdin);
                 }
                 childs.push(curPS);
             });
