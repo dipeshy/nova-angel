@@ -1,4 +1,4 @@
-import { ipcRenderer, shell } from 'electron';
+import { ipcRenderer } from 'electron';
 import React from 'react';
 import { render } from 'react-dom';
 import { AppContainer } from 'react-hot-loader';
@@ -67,10 +67,3 @@ if (module.hot) {
         );
     });
 }
-
-document.addEventListener('click', event => {
-    if (event.target && event.target.nodeName === 'A') {
-        event.preventDefault();
-        shell.openExternal(event.target.href);
-    }
-});
