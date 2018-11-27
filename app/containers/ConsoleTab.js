@@ -8,7 +8,15 @@ export default class ConsoleTab extends Component<Props> {
         this.myRef = React.createRef();
     }
 
+    componentDidMount() {
+        this.scrollBottom();
+    }
+
     componentDidUpdate() {
+        this.scrollBottom();
+    }
+
+    scrollBottom() {
         const parent = this.myRef.current.parentElement.parentElement;
         const parentHeight = parent.getBoundingClientRect().height;
         const contentHeight = this.myRef.current.getBoundingClientRect().height;
