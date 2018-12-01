@@ -17,7 +17,7 @@ export default ({ fields }: { fields: any }) => (
         </span>
         <div className="clearfix" />
         {fields.map((member, index) => (
-            <li key={member.name}>
+            <li key={member}>
                 <span
                     role="presentation"
                     className="icon icon-minus-circled pull-right"
